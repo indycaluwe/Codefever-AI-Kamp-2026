@@ -1,0 +1,12 @@
+# Dependencies
+**/node_modules/
+**/.next/
+**/build/
+**/dist/
+**/.env*
+**/.pnpm-debug.log*
+
+# Operating System files
+.DS_Store
+Thumbs.db
+._*

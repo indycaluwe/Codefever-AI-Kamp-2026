@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Horse Runner - Endless Adventure</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Arial', sans-serif;
+        }
+        
+        canvas {
+            display: block;
+            background: linear-gradient(to bottom, #87CEEB 0%, #E0F6FF 100%);
+            border: 4px solid #333;
+            max-width: 100%;
+            max-height: 100vh;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="1200" height="600"></canvas>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Game states
+        const GAME_STATE = {
+            PLAYING: 'playing',
+            GAME_OVER: 'gameOver'
+        };
+
+        // Game variables
+        let gameState = GAME_STATE.PLAYING;
+        let score = 0;
+        let highScore = localStorage.getItem('horseRunnerHighScore') || 0;
+        let gameSpeed = 8;
+        let spawnRate = 0.015;
+        let difficultyTimer = 0;
+        let invincibilityFrames = 0;
+
+        // Horse and rider
+        const player = {
+            x: 100,
+            y: canvas.height - 120,
+            width: 80,
+            height: 100,
+            velocityY: 0,
+            isJumping: false,
+            isDucking: false,
+            jumpPower: 15,
+            gravity: 0.6,
+            frameIndex: 0,
+            animationCounter: 0
+        };
+
+        const ground = canvas.height - 20;
+
+        // Obstacle pool
+        let obstacles = [];
+        let monsters = [];
+
+        // Input handling
+        const keys = {};
+        window.addEventListener('keydown', (e) => {
+            keys[e.key] = true;
+            if (e.key === ' ' || e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (!player.isJumping) {
+                    player.isJumping = true;
+                    player.velocityY = -player.jumpPower;
+                }
+            }
+        });
+        window.addEventListener('keyup', (e) => {
+            keys[e.key] = false;
+        });
+
+        // Touch controls
+        let touchStartY = 0;
+        canvas.addEventListener('touchstart', (e) => {
+            touchStartY = e.touches[0].clientY;
+        });
+        canvas.addEventListener('touchend', (e) => {
+            const touchEndY = e.changedTouches[0].clientY;
+            if (touchStartY - touchEndY > 50 && !player.isJumping) {
+                player.isJumping = true;
+                player.velocityY = -player.jumpPower;
+            } else if (touchEndY - touchStartY > 50) {
+                player.isDucking = true;
+            }
+        });
+
+        // Draw horse with rider
+        function drawHorse() {
+            ctx.save();
+            ctx.translate(player.x + 40, player.y + 50);
+
+            // Update animation
+            player.animationCounter++;
+            if (player.animationCounter > 8) {
+                player.animationCounter = 0;
+                player.frameIndex = (player.frameIndex + 1) % 4;
+            }
+
+            // Horse body
+            ctx.fillStyle = '#1a1a1a';
+            ctx.fillRect(-25, -10, 50, 30);
+
+            // Horse head
+            ctx.beginPath();
+            ctx.arc(-30, -15, 10, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Horse ears
+            ctx.fillStyle = '#0a0a0a';
+            ctx.beginPath();
+            ctx.ellipse(-32, -28, 5, 8, -0.3, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.ellipse(-28, -28, 5, 8, 0.3, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Horse snout
+            ctx.fillStyle = '#333';
+            ctx.beginPath();
+            ctx.ellipse(-35, -12, 6, 5, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Eyes
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.arc(-32, -18, 2, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Front legs with animation
+            const legOffset = Math.sin(player.frameIndex * Math.PI / 2) * 5;
+            ctx.strokeStyle = '#1a1a1a';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(-15, 20);
+            ctx.lineTo(-15, 35 + legOffset);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(-5, 20);
+            ctx.lineTo(-5, 35 - legOffset);
+            ctx.stroke();
+
+            // Back legs
+            ctx.beginPath();
+            ctx.moveTo(10, 20);
+            ctx.lineTo(10, 35 - legOffset);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(20, 20);
+            ctx.lineTo(20, 35 + legOffset);
+            ctx.stroke();
+
+            // Tail
+            ctx.strokeStyle = '#1a1a1a';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(30, 5);
+            ctx.quadraticCurveTo(45, 15, 50, 30);
+            ctx.stroke();
+
+            // Rider
+            ctx.fillStyle = '#8B4513';
+            ctx.fillRect(-10, -35, 15, 20);
+
+            ctx.fillStyle = '#FFD700';
+            ctx.beginPath();
+            ctx.arc(-2, -40, 5, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#FF6347';
+            ctx.fillRect(-15, -20, 25, 8);
+
+            ctx.restore();
+
+            // Invincibility flash
+            if (invincibilityFrames > 0) {
+                if (Math.floor(invincibilityFrames / 5) % 2 === 0) {
+                    ctx.fillStyle = 'rgba(255, 255, 0, 0.3)';
+                    ctx.fillRect(player.x, player.y, player.width, player.height);
+                }
+                invincibilityFrames--;
+            }
+        }
+
+        // Draw monsters
+        function drawMonster(monster) {
+            ctx.save();
+            ctx.translate(monster.x + 35, monster.y + 35);
+
+            ctx.fillStyle = '#1a1a1a';
+            
+            if (monster.type === 1) {
+                // Colorful multi-eyed monster
+                ctx.fillStyle = '#8B1A1A';
+                ctx.fillRect(-30, -20, 60, 50);
+                
+                ctx.fillStyle = '#FFD700';
+                ctx.beginPath();
+                ctx.arc(-15, -10, 8, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#FF0000';
+                ctx.beginPath();
+                ctx.arc(0, -15, 8, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(15, -10, 8, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Horns
+                ctx.strokeStyle = '#4A0E0E';
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                ctx.moveTo(-20, -35);
+                ctx.lineTo(-15, -50);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(0, -35);
+                ctx.lineTo(0, -52);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(20, -35);
+                ctx.lineTo(15, -50);
+                ctx.stroke();
+
+            } else if (monster.type === 2) {
+                // Dark spiky demon
+                ctx.fillStyle = '#0a0a0a';
+                ctx.fillRect(-25, -15, 50, 45);
+                
+                ctx.fillStyle = '#FFD700';
+                ctx.beginPath();
+                ctx.arc(-8, -5, 6, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(8, -5, 6, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Spikes
+                ctx.fillStyle = '#1a1a1a';
+                for (let i = 0; i < 5; i++) {
+                    ctx.beginPath();
+                    ctx.moveTo(-25 + i * 10, -20);
+                    ctx.lineTo(-22 + i * 10, -35);
+                    ctx.lineTo(-18 + i * 10, -20);
+                    ctx.fill();
+                }
+
+                // Fangs
+                ctx.strokeStyle = '#FFD700';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(-3, 15);
+                ctx.lineTo(-3, 25);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(3, 15);
+                ctx.lineTo(3, 25);
+                ctx.stroke();
+
+            } else if (monster.type === 3) {
+                // Three-eyed beast
+                ctx.fillStyle = '#1a3a2a';
+                ctx.fillRect(-28, -10, 56, 40);
+
+                ctx.fillStyle = '#FFD700';
+                ctx.beginPath();
+                ctx.arc(-10, -5, 7, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(0, -10, 7, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(10, -5, 7, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Spikes on back
+                ctx.fillStyle = '#0a2a1a';
+                for (let i = 0; i < 4; i++) {
+                    ctx.beginPath();
+                    ctx.moveTo(-20 + i * 15, -15);
+                    ctx.lineTo(-18 + i * 15, -30);
+                    ctx.lineTo(-16 + i * 15, -15);
+                    ctx.fill();
+                }
+
+            } else if (monster.type === 4) {
+                // Moss creature
+                ctx.fillStyle = '#2d5016';
+                ctx.beginPath();
+                ctx.arc(0, 0, 30, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = '#3d6b1f';
+                for (let i = 0; i < 20; i++) {
+                    const angle = (i / 20) * Math.PI * 2;
+                    const x = Math.cos(angle) * 28;
+                    const y = Math.sin(angle) * 28;
+                    ctx.beginPath();
+                    ctx.arc(x, y, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                ctx.fillStyle = '#7FFF00';
+                ctx.beginPath();
+                ctx.arc(-8, -8, 5, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(8, -8, 5, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            ctx.restore();
+        }
+
+        // Draw obstacles
+        function drawObstacle(obstacle) {
+            ctx.fillStyle = '#654321';
+            ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+            ctx.strokeStyle = '#4a2c1a';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+
+            // Add some texture
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+            for (let i = 0; i < 5; i++) {
+                ctx.fillRect(obstacle.x + i * 8, obstacle.y, 4, obstacle.height);
+            }
+        }
+
+        // Spawn enemies
+        function spawnEnemy() {
+            if (Math.random() < spawnRate) {
+                const type = Math.random();
+                
+                if (type < 0.7) {
+                    // Spawn monster
+                    monsters.push({
+                        x: canvas.width,
+                        y: ground - 80,
+                        width: 70,
+                        height: 70,
+                        type: Math.floor(Math.random() * 4) + 1,
+                        speed: gameSpeed
+                    });
+                } else {
+                    // Spawn hurdle
+                    obstacles.push({
+                        x: canvas.width,
+                        y: ground - 40,
+                        width: 40,
+                        height: 40,
+                        speed: gameSpeed
+                    });
+                }
+            }
+        }
+
+        // Check collision
+        function checkCollision(rect1, rect2) {
+            return rect1.x < rect2.x + rect2.width &&
+                   rect1.x + rect1.width > rect2.x &&
+                   rect1.y < rect2.y + rect2.height &&
+                   rect1.y + rect1.height > rect2.y;
+        }
+
+        // Update game
+        function update() {
+            if (gameState !== GAME_STATE.PLAYING) return;
+
+            // Player input
+            if (keys['ArrowDown'] || player.isDucking) {
+                player.isDucking = true;
+                player.y = ground - 50;
+            } else {
+                player.isDucking = false;
+            }
+
+            // Jump logic
+            if (player.isJumping) {
+                player.velocityY += player.gravity;
+                player.y += player.velocityY;
+
+                if (player.y >= ground - player.height + 20) {
+                    player.y = ground - player.height + 20;
+                    player.isJumping = false;
+                    player.velocityY = 0;
+                }
+            }
+
+            // Spawn enemies
+            spawnEnemy();
+
+            // Update obstacles
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                obstacles[i].x -= obstacles[i].speed;
+                if (obstacles[i].x + obstacles[i].width < 0) {
+                    obstacles.splice(i, 1);
+                    score += 10;
+                }
+            }
+
+            // Update monsters
+            for (let i = monsters.length - 1; i >= 0; i--) {
+                monsters[i].x -= monsters[i].speed;
+                if (monsters[i].x + monsters[i].width < 0) {
+                    monsters.splice(i, 1);
+                    score += 20;
+                }
+            }
+
+            // Collision detection
+            if (invincibilityFrames <= 0) {
+                const playerBounds = {
+                    x: player.x + 15,
+                    y: player.y + 20,
+                    width: 50,
+                    height: player.isDucking ? 30 : 60
+                };
+
+                for (let obstacle of obstacles) {
+                    if (checkCollision(playerBounds, obstacle)) {
+                        endGame();
+                    }
+                }
+
+                for (let monster of monsters) {
+                    if (checkCollision(playerBounds, monster)) {
+                        endGame();
+                    }
+                }
+            }
+
+            // Difficulty progression
+            difficultyTimer++;
+            if (difficultyTimer > 300) {
+                gameSpeed += 0.5;
+                spawnRate += 0.002;
+                difficultyTimer = 0;
+            }
+
+            score += 1;
+        }
+
+        // Draw game
+        function draw() {
+            // Background
+            ctx.fillStyle = '#87CEEB';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Distant hills
+            ctx.fillStyle = 'rgba(100, 150, 200, 0.3)';
+            for (let i = 0; i < 3; i++) {
+                ctx.beginPath();
+                ctx.arc(canvas.width / 2 + i * 400 - (score / 10) % 400, canvas.height / 2 - 50, 150, 0, Math.PI);
+                ctx.fill();
+            }
+
+            // Ground
+            ctx.fillStyle = '#228B22';
+            ctx.fillRect(0, ground, canvas.width, canvas.height - ground);
+
+            // Grass line
+            ctx.strokeStyle = '#1a6b1a';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(0, ground);
+            ctx.lineTo(canvas.width, ground);
+            ctx.stroke();
+
+            // Draw obstacles and monsters
+            for (let obstacle of obstacles) {
+                drawObstacle(obstacle);
+            }
+
+            for (let monster of monsters) {
+                drawMonster(monster);
+            }
+
+            // Draw player
+            drawHorse();
+
+            // UI
+            ctx.fillStyle = '#000';
+            ctx.font = 'bold 28px Arial';
+            ctx.fillText(`Score: ${Math.floor(score / 10)}`, 20, 40);
+            ctx.fillText(`High Score: ${Math.floor(highScore)}`, 20, 75);
+
+            // Game over screen
+            if (gameState === GAME_STATE.GAME_OVER) {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 48px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('GAME OVER', canvas.width / 2, canvas.height / 2 - 60);
+
+                ctx.font = '32px Arial';
+                ctx.fillText(`Final Score: ${Math.floor(score / 10)}`, canvas.width / 2, canvas.height / 2 + 20);
+
+                if (Math.floor(score / 10) > Math.floor(highScore)) {
+                    ctx.fillStyle = '#FFD700';
+                    ctx.fillText('🏆 NEW HIGH SCORE! 🏆', canvas.width / 2, canvas.height / 2 + 70);
+                }
+
+                ctx.fillStyle = '#fff';
+                ctx.font = '20px Arial';
+                ctx.fillText('Click or press SPACE to restart', canvas.width / 2, canvas.height / 2 + 130);
+                ctx.textAlign = 'left';
+            }
+        }
+
+        function endGame() {
+            gameState = GAME_STATE.GAME_OVER;
+            if (Math.floor(score / 10) > Math.floor(highScore)) {
+                highScore = Math.floor(score / 10);
+                localStorage.setItem('horseRunnerHighScore', highScore);
+            }
+        }
+
+        function resetGame() {
+            gameState = GAME_STATE.PLAYING;
+            score = 0;
+            gameSpeed = 8;
+            spawnRate = 0.015;
+            difficultyTimer = 0;
+            invincibilityFrames = 120;
+            player.y = ground - player.height + 20;
+            player.velocityY = 0;
+            player.isJumping = false;
+            player.isDucking = false;
+            obstacles = [];
+            monsters = [];
+        }
+
+        // Event listeners
+        window.addEventListener('click', () => {
+            if (gameState === GAME_STATE.GAME_OVER) {
+                resetGame();
+            }
+        });
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key === ' ' && gameState === GAME_STATE.GAME_OVER) {
+                e.preventDefault();
+                resetGame();
+            }
+        });
+
+        canvas.addEventListener('tap', () => {
+            if (gameState === GAME_STATE.GAME_OVER) {
+                resetGame();
+            }
+        });
+
+        // Game loop
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        gameLoop();
+    </script>
+</body>
+</html>

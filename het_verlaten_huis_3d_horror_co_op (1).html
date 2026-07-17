@@ -1,0 +1,3119 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Het Verlaten Huis - 3D Horror Escape Room & Renovatie</title>
+    <!-- Tailwind CSS voor sfeervolle en moderne UI -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome voor sfeervolle iconen -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts voor horror sfeer -->
+    <link href="https://fonts.googleapis.com/css2?family=Creepster&family=Special+Elite&family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    <!-- Three.js voor de 3D rendering -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
+    <!-- Firebase Libraries voor de Multiplayer functionaliteit -->
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore-compat.js"></script>
+
+    <style>
+        .font-horror {
+            font-family: 'Creepster', cursive;
+        }
+        .font-retro {
+            font-family: 'Special Elite', monospace;
+        }
+        .font-clean {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        /* Custom scrollbar voor inventaris en logs */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(26, 26, 26, 0.5);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #4a1212;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #7f1d1d;
+        }
+        /* Crosshair in het midden van het scherm */
+        #crosshair {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 10px;
+            height: 10px;
+            background-color: rgba(255, 255, 255, 0.4);
+            border: 1px solid rgba(0, 0, 0, 0.6);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 10;
+            transition: all 0.1s ease;
+        }
+        #crosshair.active {
+            background-color: #ef4444;
+            transform: translate(-50%, -50%) scale(1.6);
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.9);
+        }
+    </style>
+</head>
+<body class="bg-black text-stone-200 overflow-hidden select-none font-clean">
+
+    <!-- START SCHERM / HOOFDMENU -->
+    <div id="start-screen" class="fixed inset-0 bg-stone-950 z-50 flex flex-col items-center justify-start p-6 text-center overflow-y-auto">
+        <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(65,18,18,0.25)_0%,rgba(0,0,0,1)_100%)] pointer-events-none"></div>
+        
+        <div class="max-w-2xl w-full border-2 border-red-950/40 p-6 md:p-10 bg-stone-900/40 rounded-2xl shadow-[0_0_50px_rgba(0,0,0,0.85)] backdrop-blur-md z-10 transition-transform duration-500 scale-100 my-auto">
+            <h1 class="font-horror text-5xl md:text-7xl text-red-700 tracking-wider mb-2 animate-pulse drop-shadow-[0_5px_15px_rgba(220,38,38,0.3)]">HET VERLATEN HUIS</h1>
+            <p class="font-retro text-stone-500 text-xs md:text-sm tracking-widest mb-6 uppercase">3D Horror Co-Op Survival - AZERTY &amp; Sprint Update</p>
+            
+            <!-- Algemene Naam Selector -->
+            <div class="bg-stone-950/80 p-4 rounded-xl border border-stone-800 mb-4 text-left">
+                <label class="block text-xs text-stone-400 font-bold uppercase mb-1.5"><i class="fa-solid fa-signature text-red-500 mr-1"></i> Vul je Overleversnaam in:</label>
+                <input id="global-name-input" type="text" maxlength="12" placeholder="Gast Overlever" class="w-full bg-stone-900 border border-stone-800 rounded px-3 py-2 text-sm text-stone-200 focus:outline-none focus:border-red-700 font-retro">
+            </div>
+
+            <!-- Multiplayer Config Sectie -->
+            <div class="bg-stone-950/70 p-4 rounded-xl border border-red-900/30 mb-6 text-left space-y-3">
+                <h3 class="font-retro text-sm text-red-500 uppercase tracking-wider"><i class="fa-solid fa-users mr-2"></i> Samen Spelen (Multiplayer)</h3>
+                <div>
+                    <label class="block text-[11px] text-stone-400 font-bold uppercase mb-1">Kamercode (om deel te nemen)</label>
+                    <div class="flex gap-2">
+                        <input id="mp-code-input" type="text" maxlength="4" placeholder="Bv. ABCD" class="w-full bg-stone-900 border border-stone-800 rounded px-3 py-1.5 text-sm text-stone-200 focus:outline-none focus:border-red-700 uppercase font-retro">
+                        <button onclick="joinMultiplayerRoom()" class="bg-stone-800 hover:bg-stone-750 px-4 text-xs font-retro rounded border border-stone-700">Deelnemen</button>
+                    </div>
+                </div>
+                <div class="flex justify-between items-center pt-2 border-t border-stone-900">
+                    <span class="text-xs text-stone-500">Of start zelf een nieuwe multiplayer kamer:</span>
+                    <button onclick="createMultiplayerRoom()" class="bg-red-950/60 hover:bg-red-900/60 border border-red-900/40 text-red-300 text-xs font-retro px-4 py-1.5 rounded transition-all">
+                        <i class="fa-solid fa-plus mr-1"></i> Maak Kamer
+                    </button>
+                </div>
+            </div>
+
+            <div class="space-y-3 mb-6 text-stone-300 text-left bg-black/50 p-4 rounded-xl border border-stone-850 text-xs md:text-sm leading-relaxed font-retro">
+                <p>📍 <strong>Besturing &amp; Bewegen:</strong> Lopen doe je met de <kbd class="px-1.5 py-0.5 bg-stone-800 text-white rounded text-[11px]"><i class="fa-solid fa-circle-arrow-up"></i> <i class="fa-solid fa-circle-arrow-down"></i> <i class="fa-solid fa-circle-arrow-left"></i> <i class="fa-solid fa-circle-arrow-right"></i> Pijltjestoetsen</kbd> of met <kbd class="px-1.5 py-0.5 bg-stone-800 text-white rounded text-[11px]">ZQSD</kbd>.</p>
+                <p>🚀 <strong>Specifieke Actietoetsen:</strong></p>
+                <ul class="list-disc list-inside pl-2 space-y-1 text-stone-400">
+                    <li><kbd class="px-1 py-0.2 bg-stone-800 text-white rounded"><i class="fa-solid fa-circle-arrow-up"></i></kbd> of <kbd class="px-1 py-0.2 bg-stone-800 text-white rounded">Z</kbd> = Voorwaarts lopen</li>
+                    <li><kbd class="px-1 py-0.2 bg-stone-800 text-white rounded">Shift</kbd> = <strong>Rennen / Sprinten</strong> (Je kunt maximaal 15 seconden rennen!)</li>
+                    <li><kbd class="px-1 py-0.2 bg-stone-800 text-white rounded">E</kbd> = <strong>Grijpen &amp; Oppakken</strong> (Loot van de grond rapen, kisten openen)</li>
+                    <li><kbd class="px-1 py-0.2 bg-stone-800 text-white rounded">C</kbd> = Sluipen (De pop kan je niet aanvallen!)</li>
+                </ul>
+                <p>📦 <strong>Loot:</strong> Er liggen nu overal losse materialen en blikjes voedsel op tafels en vloeren verstopt. Richt je camera erop en druk op <kbd class="px-1.5 py-0.5 bg-amber-800 text-white rounded text-[10px]">E</kbd> om ze in je rugzak te stoppen!</p>
+                <p>📖 <strong>In-game hulp:</strong> Druk op <kbd class="px-1.5 py-0.5 bg-red-800 text-white rounded text-[10px]">H</kbd> voor alle moves.</p>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-3 justify-center">
+                <button onclick="startGame(false)" class="font-retro bg-red-800 hover:bg-red-700 text-white text-base font-bold py-3 px-8 rounded-xl border-b-4 border-red-950 shadow-[0_0_20px_rgba(220,38,38,0.3)] transition-all transform hover:scale-105 active:scale-95">
+                    <i class="fa-solid fa-play mr-2"></i> Start Alleen (Offline)
+                </button>
+                <button id="btn-continue" onclick="startGame(true)" class="font-retro bg-stone-800 hover:bg-stone-750 text-stone-300 text-base py-3 px-8 rounded-xl border-b-4 border-stone-900 transition-all transform hover:scale-105 active:scale-95 hidden">
+                    <i class="fa-solid fa-floppy-disk mr-2"></i> Offline Doorgaan
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- INTRO CINEMATIC OVERLAY (Helikopterview) -->
+    <div id="intro-cinematic-overlay" class="fixed inset-0 bg-gradient-to-t from-black/90 via-transparent to-black/50 z-30 hidden flex flex-col justify-between p-8 pointer-events-none">
+        <div class="self-center text-center mt-6">
+            <h2 class="font-horror text-5xl md:text-6xl text-red-600 tracking-widest drop-shadow-[0_4px_10px_rgba(0,0,0,0.9)] animate-pulse">HET ADEMBENEMENDE LANDHUIS</h2>
+            <p class="font-retro text-stone-300 text-xs md:text-sm tracking-wide max-w-md mx-auto mt-2 bg-black/60 p-3 rounded-lg border border-stone-800/50">
+                Al decennia verwaarloosd. Vijf etages vol duistere geheimen, krakende vloeren, rondliggende bruikbare spullen en een dichte bovennatuurlijke mist...
+            </p>
+        </div>
+        <div class="self-center mb-10 pointer-events-auto">
+            <button onclick="endIntroAndLand()" class="font-retro bg-red-800 hover:bg-red-700 text-white text-md font-bold py-4 px-12 rounded-2xl border-b-4 border-red-950 shadow-[0_0_25px_rgba(220,38,38,0.6)] transition-all transform hover:scale-105 active:scale-95 flex items-center gap-3">
+                <i class="fa-solid fa-parachute-box animate-bounce text-lg"></i> Landen &amp; Start Level 1
+            </button>
+        </div>
+    </div>
+
+    <!-- MOVES OVERVIEW MODAL (Geadactiveerd met H) -->
+    <div id="moves-modal" class="fixed inset-0 bg-black/90 z-50 hidden flex items-center justify-center p-4 backdrop-blur-md">
+        <div class="bg-stone-900 border-2 border-red-900 p-8 rounded-2xl max-w-lg w-full shadow-2xl relative">
+            <button onclick="toggleMovesModal()" class="absolute top-4 right-4 text-stone-500 hover:text-white text-xl p-1 transition-colors">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <h2 class="font-horror text-4xl text-red-600 text-center mb-6 tracking-wider"><i class="fa-solid fa-hand-fist mr-2"></i> ALLE ACTIE MOVES</h2>
+            
+            <div class="space-y-3 font-retro text-xs md:text-sm">
+                <div class="flex justify-between items-center bg-black/50 p-3 rounded-lg border border-stone-800">
+                    <span class="text-stone-300">
+                        <kbd class="px-2 py-1 bg-red-950 border border-red-800 rounded text-red-400 font-retro"><i class="fa-solid fa-arrow-up"></i></kbd> of 
+                        <kbd class="px-2 py-1 bg-red-950 border border-red-800 rounded text-red-400 font-retro">Z</kbd> Naar voren
+                    </span>
+                    <span class="text-stone-500 italic">Loop voorwaarts</span>
+                </div>
+                <div class="flex justify-between items-center bg-black/50 p-3 rounded-lg border border-stone-800 text-blue-400 font-bold">
+                    <span><kbd class="px-2 py-1 bg-blue-950 border border-blue-800 rounded text-blue-400 font-retro">Shift</kbd> Rennen / Sprinten</span>
+                    <span class="italic">Ren sneller (Conditiebalk loopt leeg!)</span>
+                </div>
+                <div class="flex justify-between items-center bg-black/50 p-3 rounded-lg border border-stone-800 text-amber-400">
+                    <span class="font-bold"><kbd class="px-2 py-1 bg-amber-950 border border-amber-800 rounded text-amber-400 font-retro">E</kbd> Grijpen &amp; Oppakken</span>
+                    <span class="italic font-bold">Spullen van de grond rapen / openen</span>
+                </div>
+                <div class="flex justify-between items-center bg-black/50 p-3 rounded-lg border border-stone-800 text-red-400">
+                    <span class="font-bold"><kbd class="px-2 py-1 bg-red-950 border border-red-800 rounded text-red-400 font-retro">R</kbd> Slaan (Linkerhand)</span>
+                    <span class="italic font-bold">Deel een linkerhoek uit</span>
+                </div>
+                <div class="flex justify-between items-center bg-black/50 p-3 rounded-lg border border-stone-800">
+                    <span class="text-stone-300"><kbd class="px-2 py-1 bg-stone-800 border border-stone-700 rounded text-stone-400 font-retro">W</kbd> Trappen (Linkerbeen)</span>
+                    <span class="text-stone-500 italic">Voorwaartse linkertrap</span>
+                </div>
+                <div class="flex justify-between items-center bg-black/50 p-3 rounded-lg border border-stone-800">
+                    <span class="text-stone-300"><kbd class="px-2 py-1 bg-stone-800 border border-stone-700 rounded text-stone-400 font-retro">X</kbd> Trappen (Rechterbeen)</span>
+                    <span class="text-stone-500 italic">Krachtige rechtertrap</span>
+                </div>
+                <div class="flex justify-between items-center bg-black/50 p-3 rounded-lg border border-stone-800 text-red-400">
+                    <span class="font-bold"><kbd class="px-2 py-1 bg-red-950 border border-red-800 rounded text-red-400 font-retro">C</kbd> Sluipen (SNEAK)</span>
+                    <span class="text-red-300 font-bold italic">De enge pop kan je niet zien!</span>
+                </div>
+            </div>
+            
+            <button onclick="toggleMovesModal()" class="w-full mt-6 py-2.5 bg-red-800 hover:bg-red-700 text-white rounded-xl font-retro text-sm transition-all shadow-lg">
+                Sluit Overzicht &amp; Speel
+            </button>
+        </div>
+    </div>
+
+    <!-- BRIEF UIT BRIEVENBUS MODAL (Parchment Paper Retro Style) -->
+    <div id="letter-modal" class="fixed inset-0 bg-black/85 z-50 hidden flex items-center justify-center p-4 backdrop-blur-md">
+        <div class="relative bg-[radial-gradient(ellipse_at_center,#fbf0d9_0%,#e6cfa3_100%)] text-amber-950 border-4 border-amber-900/60 p-6 md:p-10 rounded-2xl max-w-md w-full shadow-[0_0_50px_rgba(0,0,0,0.8)] font-retro select-text transform transition-all duration-300">
+            <button onclick="closeLetterModal()" class="absolute top-4 right-4 text-amber-900 hover:text-black text-2xl p-1 transition-colors">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div class="text-center mb-4">
+                <i class="fa-solid fa-envelope-open-text text-amber-800 text-4xl mb-2 animate-pulse"></i>
+                <h2 class="font-retro text-2xl font-bold tracking-wider text-amber-900">Een Stoffige Brief</h2>
+            </div>
+            <div class="border-t border-b border-amber-900/30 py-4 my-4 text-xs md:text-sm leading-relaxed text-justify">
+                <p class="mb-4"><i>Liefste dagboek,</i></p>
+                <p class="mb-4">
+                    De geesten dwalen door de gangen... Als ik ooit de voordeur weer moet vergrendelen tegen het kwaad, zal ik de koperen schijven instellen op deze geheime code:
+                </p>
+                <p class="mb-4 text-center font-bold text-lg tracking-widest bg-amber-900/10 py-3 rounded-lg border border-amber-900/20">
+                    🔑 COMBINATIE: <span id="letter-code-text" class="text-red-800 font-bold">12 - 3 - 6</span>
+                </p>
+                <p class="italic text-right text-amber-900/70 font-clean text-xs">~ De Verloren Ziel</p>
+            </div>
+            <button onclick="closeLetterModal()" class="w-full py-2.5 bg-amber-900 hover:bg-amber-800 text-amber-50 rounded-xl font-retro text-xs transition-all shadow-md">
+                Sluit Brief &amp; Ga Verder
+            </button>
+        </div>
+    </div>
+
+    <!-- POINTER LOCK OVERLAY -->
+    <div id="lock-overlay" class="fixed inset-0 bg-black/85 z-40 hidden flex flex-col items-center justify-center p-4 text-center cursor-pointer">
+        <div class="space-y-4 max-w-sm bg-stone-900/90 border-2 border-stone-800 p-8 rounded-2xl shadow-2xl pointer-events-auto">
+            <i class="fa-solid fa-circle-pause text-red-500 text-5xl animate-pulse"></i>
+            <h2 id="pause-status-text" class="font-retro text-2xl text-stone-200">Spel Gepauzeerd</h2>
+            <p class="text-stone-400 text-sm">Klik op het scherm om door te gaan met automatische muis-focus.</p>
+            <div class="border-t border-stone-850 my-3 pt-4">
+                <p class="text-stone-500 text-xs mb-3">Werkt de muis-focus niet in jouw browseromgeving?</p>
+                <button onclick="startFallbackMode(event)" class="w-full bg-red-800 hover:bg-red-700 text-white font-retro text-xs py-3 px-4 rounded-xl border-b-2 border-red-950 transition-all pointer-events-auto">
+                    Speel met sleepbesturing (Slepen om rond te kijken)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- GAME OVER / WINST SCHERMEN -->
+    <div id="end-screen" class="fixed inset-0 bg-black z-50 hidden flex flex-col items-center justify-center p-6 text-center">
+        <div id="end-card" class="max-w-xl border-2 p-10 bg-stone-900/90 rounded-2xl shadow-2xl backdrop-blur-md border-red-900">
+            <h2 id="end-title" class="font-horror text-7xl mb-4 tracking-wider text-red-600">GAME OVER</h2>
+            <p id="end-message" class="font-retro text-stone-400 text-sm md:text-base leading-relaxed mb-8"></p>
+            <button onclick="location.reload()" class="font-retro bg-stone-800 hover:bg-stone-750 text-white py-3 px-8 rounded-xl border-b-4 border-stone-950 transition duration-300">
+                <i class="fa-solid fa-arrow-rotate-left mr-2"></i> Terug naar Menu
+            </button>
+        </div>
+    </div>
+
+    <!-- 3D CANVAS RUNTIME -->
+    <div id="canvas-container" class="w-full h-full absolute inset-0 z-0"></div>
+
+    <!-- CROSSHAIR -->
+    <div id="crosshair"></div>
+
+    <!-- COMPACT HUD -->
+    <div id="game-hud" class="absolute inset-0 pointer-events-none z-20 flex flex-col justify-between p-6 opacity-0 transition-opacity duration-500">
+        
+        <!-- Bovenste Statusbalk -->
+        <div class="flex justify-between items-start w-full">
+            <!-- Kamer Indicator met Level display -->
+            <div class="bg-black/60 border border-stone-800/80 px-4 py-2.5 rounded-xl backdrop-blur-md flex items-center gap-3">
+                <span class="w-2.5 h-2.5 rounded-full bg-red-600 animate-pulse"></span>
+                <div>
+                    <span id="hud-level-indicator" class="text-xs text-red-500 uppercase font-extrabold tracking-wider block">Level 1</span>
+                    <h3 id="hud-location" class="font-retro text-stone-200 text-sm">Buitenplaats</h3>
+                    <div class="flex items-center gap-1.5 mt-0.5">
+                        <span id="hud-player-name" class="text-[11px] text-stone-400 font-retro">Gast</span>
+                        <span id="hud-sneak-badge" class="hidden bg-red-950 text-red-500 border border-red-800/50 px-1 py-0.2 rounded text-[9px] font-bold animate-pulse"><i class="fa-solid fa-eye-slash mr-0.5"></i> SLUIPT</span>
+                        <span id="mp-lobby-badge" class="text-[10px] text-emerald-400 font-semibold hidden">(Kamer: <b id="mp-lobby-id">OFFLINE</b>)</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Survival Statusbars -->
+            <div class="flex flex-col gap-2 w-56 sm:w-64 bg-black/60 border border-stone-800/80 p-3.5 rounded-xl backdrop-blur-md">
+                <!-- Energie -->
+                <div>
+                    <div class="flex justify-between text-xs mb-1">
+                        <span class="text-amber-400 font-semibold"><i class="fa-solid fa-bolt mr-1"></i> Energie</span>
+                        <span id="bar-energy-text" class="text-stone-400 font-mono">100%</span>
+                    </div>
+                    <div class="w-full bg-stone-950 h-2 rounded-full overflow-hidden border border-stone-800">
+                        <div id="bar-energy" class="bg-amber-500 h-full rounded-full transition-all duration-300" style="width: 100%"></div>
+                    </div>
+                </div>
+                <!-- Conditie / Stamina (Nieuwe Sprintmeter) -->
+                <div>
+                    <div class="flex justify-between text-xs mb-1">
+                        <span class="text-blue-400 font-semibold"><i class="fa-solid fa-person-running mr-1"></i> Conditie</span>
+                        <span id="bar-stamina-text" class="text-stone-400 font-mono">100%</span>
+                    </div>
+                    <div class="w-full bg-stone-950 h-2 rounded-full overflow-hidden border border-stone-800">
+                        <div id="bar-stamina" class="bg-blue-500 h-full rounded-full transition-all duration-100" style="width: 100%"></div>
+                    </div>
+                </div>
+                <!-- Honger -->
+                <div>
+                    <div class="flex justify-between text-xs mb-1">
+                        <span class="text-emerald-400 font-semibold"><i class="fa-solid fa-apple-whole mr-1"></i> Honger</span>
+                        <span id="bar-hunger-text" class="text-stone-400 font-mono">100%</span>
+                    </div>
+                    <div class="w-full bg-stone-950 h-2 rounded-full overflow-hidden border border-stone-800">
+                        <div id="bar-hunger" class="bg-emerald-500 h-full rounded-full transition-all duration-300" style="width: 100%"></div>
+                    </div>
+                </div>
+                <!-- Zaklamp Batterij -->
+                <div id="battery-hud" class="hidden">
+                    <div class="flex justify-between text-xs mb-1">
+                        <span class="text-cyan-400 font-semibold"><i class="fa-solid fa-flashlight mr-1"></i> Batterij</span>
+                        <span id="bar-battery-text" class="text-stone-400 font-mono">100%</span>
+                    </div>
+                    <div class="w-full bg-stone-950 h-1.5 rounded-full overflow-hidden border border-stone-800">
+                        <div id="bar-battery" class="bg-cyan-500 h-full rounded-full transition-all duration-300" style="width: 100%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Interactie Prompt (Midden onderkant) -->
+        <div class="self-center flex flex-col items-center gap-2 mb-12">
+            <div id="action-prompt" class="bg-amber-950/90 border border-amber-500/50 text-amber-200 px-6 py-3 rounded-xl backdrop-blur-md font-retro text-sm flex items-center gap-3 shadow-2xl opacity-0 transform translate-y-4 transition-all duration-300">
+                <span class="bg-amber-600 text-black px-2 py-0.5 rounded text-xs font-bold font-clean animate-pulse">E</span>
+                <span id="action-text">Onderzoek</span>
+            </div>
+        </div>
+
+        <!-- Onderste Paneel: Snelkoppelingen en Systeemlogs -->
+        <div class="flex justify-between items-end w-full">
+            <!-- Live notificaties (Links) -->
+            <div id="system-logs" class="flex flex-col gap-1.5 max-w-sm text-xs font-retro text-stone-400"></div>
+
+            <!-- UI Toggle Knoppen (Rechts) -->
+            <div class="flex gap-3 pointer-events-auto">
+                <button onclick="toggleMovesModal()" class="bg-red-900/60 border border-red-700 hover:bg-red-800/80 text-white p-3 rounded-xl backdrop-blur-md transition-all animate-pulse" title="Combat Moves Overzicht (H)">
+                    <i class="fa-solid fa-hand-fist"></i> Moves
+                </button>
+                <button onclick="toggleMute()" id="hud-mute-btn" class="bg-black/60 border border-stone-800 hover:bg-stone-900 text-stone-400 hover:text-white p-3 rounded-xl backdrop-blur-md transition-all">
+                    <i class="fa-solid fa-volume-high"></i>
+                </button>
+                <button onclick="toggleInventoryUI()" class="bg-red-950/60 border border-red-900/30 hover:bg-red-900/50 text-red-400 hover:text-white px-5 py-3 rounded-xl font-retro text-sm backdrop-blur-md transition-all shadow-lg flex items-center gap-2">
+                    <i class="fa-solid fa-bag-shopping"></i> Rugzak
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- INVENTARIS / CRAFTING / RENOVATIE OVERLAY MENU -->
+    <div id="inventory-ui" class="fixed inset-0 bg-black/80 z-30 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-stone-900 border-2 border-stone-800 p-6 rounded-2xl max-w-4xl w-full grid grid-cols-1 md:grid-cols-3 gap-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+            
+            <!-- Sluitknop -->
+            <div class="col-span-full flex justify-between items-center border-b border-stone-800 pb-3">
+                <h2 class="font-retro text-xl text-red-500 font-bold"><i class="fa-solid fa-toolbox mr-2"></i> Overleving &amp; Crafting</h2>
+                <button onclick="toggleInventoryUI()" class="text-stone-500 hover:text-white text-xl p-1 transition-colors">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Kolom 1: Rugzak (Inventaris) -->
+            <div class="bg-black/40 p-4 rounded-xl border border-stone-800 flex flex-col h-[350px]">
+                <h3 class="font-retro text-xs uppercase text-stone-500 mb-3 border-b border-stone-850 pb-1">Inventaris</h3>
+                <div id="inv-grid" class="grid grid-cols-3 gap-2 overflow-y-auto flex-grow content-start"></div>
+                <div id="inv-desc" class="mt-3 p-2 bg-stone-950 border border-stone-800 rounded-lg text-xs text-stone-400 italic min-h-[50px] flex items-center justify-center text-center">
+                    Klik op een item om details te bekijken.
+                </div>
+            </div>
+
+            <!-- Kolom 2: Crafting -->
+            <div class="bg-black/40 p-4 rounded-xl border border-stone-800 flex flex-col h-[350px]">
+                <h3 class="font-retro text-xs uppercase text-stone-500 mb-3 border-b border-stone-850 pb-1">Crafting Werkbank</h3>
+                <div id="craft-list" class="space-y-2 overflow-y-auto flex-grow flex flex-col gap-1.5"></div>
+            </div>
+
+            <!-- Kolom 3: Huis Renovatie status -->
+            <div class="bg-black/40 p-4 rounded-xl border border-stone-800 flex flex-col h-[350px] justify-between">
+                <div>
+                    <h3 class="font-retro text-xs uppercase text-stone-500 mb-3 border-b border-stone-850 pb-1">Huis Renovatie</h3>
+                    <p class="text-xs text-stone-400 mb-4 leading-relaxed">
+                        Herstel het oude huis om de duistere mist te verdrijven en het spookachtige karakter te kalmeren. Elke reparatie maakt de sfeer vriendelijker!
+                    </p>
+                    <div class="space-y-3" id="renovation-status-list"></div>
+                </div>
+                <div class="bg-red-950/20 border border-red-900/30 p-2.5 rounded-lg text-center text-xs text-stone-400">
+                    <i class="fa-solid fa-hammer mr-1 text-red-500"></i> Repareer vergane delen in de 3D-wereld met hout en metaal.
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- PUZZEL: VOORDEUR SLOT OVERLAY -->
+    <div id="door-puzzle-ui" class="fixed inset-0 bg-black/90 z-30 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-stone-900 border-2 border-amber-900/60 p-8 rounded-2xl max-w-md w-full shadow-2xl text-center relative">
+            <button onclick="closeDoorPuzzle()" class="absolute top-4 right-4 text-stone-500 hover:text-white text-xl p-1 transition-colors">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <h2 class="font-retro text-2xl text-amber-500 font-bold mb-2"><i class="fa-solid fa-key-skeleton mr-2"></i> Het Roestige Deurslot</h2>
+            <p class="text-xs text-stone-400 leading-relaxed mb-6 font-clean">
+                De sleutel past in het slot, maar drie zware koperen schijven blokkeren de omdraaiing. Op de sleutel staat gegraveerd: <br>
+                <span id="mp-key-clue" class="text-amber-400 font-semibold italic">"..."</span>.
+            </p>
+
+            <!-- Dials Grid -->
+            <div class="grid grid-cols-3 gap-4 mb-8">
+                <!-- Dial 1 -->
+                <div class="bg-stone-950 p-4 rounded-xl border border-amber-950/40 flex flex-col items-center">
+                    <span class="text-[10px] text-stone-500 uppercase font-bold tracking-wider mb-2">Dial 1</span>
+                    <button onclick="rotateDial(1, 1)" class="w-8 h-8 bg-stone-800 hover:bg-amber-900/40 text-stone-300 rounded-full flex items-center justify-center text-xs font-bold transition-all mb-2"><i class="fa-solid fa-chevron-up"></i></button>
+                    <div id="dial-val-1" class="font-retro text-3xl text-amber-500 my-1 font-bold">1</div>
+                    <button onclick="rotateDial(1, -1)" class="w-8 h-8 bg-stone-800 hover:bg-amber-900/40 text-stone-300 rounded-full flex items-center justify-center text-xs font-bold transition-all mt-2"><i class="fa-solid fa-chevron-down"></i></button>
+                </div>
+                <!-- Dial 2 -->
+                <div class="bg-stone-950 p-4 rounded-xl border border-amber-950/40 flex flex-col items-center">
+                    <span class="text-[10px] text-stone-500 uppercase font-bold tracking-wider mb-2">Dial 2</span>
+                    <button onclick="rotateDial(2, 1)" class="w-8 h-8 bg-stone-800 hover:bg-amber-900/40 text-stone-300 rounded-full flex items-center justify-center text-xs font-bold transition-all mb-2"><i class="fa-solid fa-chevron-up"></i></button>
+                    <div id="dial-val-2" class="font-retro text-3xl text-amber-500 my-1 font-bold">1</div>
+                    <button onclick="rotateDial(2, -1)" class="w-8 h-8 bg-stone-800 hover:bg-amber-900/40 text-stone-300 rounded-full flex items-center justify-center text-xs font-bold transition-all mt-2"><i class="fa-solid fa-chevron-down"></i></button>
+                </div>
+                <!-- Dial 3 -->
+                <div class="bg-stone-950 p-4 rounded-xl border border-amber-950/40 flex flex-col items-center">
+                    <span class="text-[10px] text-stone-500 uppercase font-bold tracking-wider mb-2">Dial 3</span>
+                    <button onclick="rotateDial(3, 1)" class="w-8 h-8 bg-stone-800 hover:bg-amber-900/40 text-stone-300 rounded-full flex items-center justify-center text-xs font-bold transition-all mb-2"><i class="fa-solid fa-chevron-up"></i></button>
+                    <div id="dial-val-3" class="font-retro text-3xl text-amber-500 my-1 font-bold">1</div>
+                    <button onclick="rotateDial(3, -1)" class="w-8 h-8 bg-stone-800 hover:bg-amber-900/40 text-stone-300 rounded-full flex items-center justify-center text-xs font-bold transition-all mt-2"><i class="fa-solid fa-chevron-down"></i></button>
+                </div>
+            </div>
+
+            <button onclick="checkDoorLockPuzzle()" class="w-full py-3 bg-amber-800 hover:bg-amber-700 text-stone-100 rounded-xl font-retro text-sm font-bold shadow-lg transition-all">
+                Probeer Slot Te Openen
+            </button>
+        </div>
+    </div>
+
+    <!-- AUDIO ENGINE, PHYSICS, AND CLIENT RUNTIME LOGICA -->
+    <script>
+        // --- CONFIGURATIE & GLOBALE TOESTAND ---
+        const SAVE_KEY = "verlaten_huis_3d_autosave_v3";
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'verlaten-huis-app';
+        
+        let gameState = {
+            playerName: "Gast",
+            isSneaking: false,         
+            outsideKeyCollected: false,
+            keyLocationId: "mailbox",  
+            doorCode: { dial1: 12, dial2: 3, dial3: 6 }, 
+            frontDoorUnlocked: false,
+            flashlightCollected: true, 
+            flashlightOn: true,        
+            flashlightBattery: 100,
+            axeCollected: false,
+            barricadeDestroyed: false,
+            crowbarCollected: false,
+            basementDoorUnlocked: false, 
+            insideTent: false,         
+            currentLevel: 1,           
+            introActive: true,         
+            renovations: {
+                wall: false,     
+                window: false,   
+                door: false      
+            },
+            inventory: {
+                food: 2,
+                wood: 0,
+                metal: 0
+            },
+            survival: {
+                energy: 100,
+                hunger: 100,
+                stamina: 100 // Conditie / Sprintmeter (Max 15 seconden)
+            },
+            currentRoomId: "outside",
+            playerPosition: null,      
+            playerRotation: null       
+        };
+
+        let lockDials = { dial1: 1, dial2: 1, dial3: 1 };
+        let combatAnims = { leftPunch: 0, rightPunch: 0, leftKick: 0, rightKick: 0 };
+        let shiftPressed = false; // Registreert of de Shift toets is ingedrukt
+
+        // --- MULTIPLAYER SETUP (Rule 1, 2, 3 compliant) ---
+        let isMultiplayer = false;
+        let multiplayerRoomId = "";
+        let myPlayerName = "Gast";
+        let myUserId = "user_" + Math.random().toString(36).substr(2, 9);
+        let firebaseUser = null;
+        let db = null;
+        let auth = null;
+        let otherPlayers = {}; 
+
+        function initFirebaseConnection() {
+            if (typeof __firebase_config === 'undefined') return;
+            try {
+                const firebaseConfig = JSON.parse(__firebase_config);
+                if (firebase.apps.length === 0) {
+                    firebase.initializeApp(firebaseConfig);
+                }
+                db = firebase.firestore();
+                auth = firebase.auth();
+            } catch (err) {
+                console.warn("Fout bij laden van de databaseverbinding:", err);
+            }
+        }
+
+        async function authenticateFirebase() {
+            if (!auth) return;
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    const credentials = await auth.signInWithCustomToken(__initial_auth_token);
+                    firebaseUser = credentials.user;
+                    myUserId = firebaseUser.uid;
+                } else {
+                    const credentials = await auth.signInAnonymously();
+                    firebaseUser = credentials.user;
+                    myUserId = firebaseUser.uid;
+                }
+            } catch (err) {
+                console.warn("Anonieme login mislukt. Fallback naar offline modus ID.", err);
+            }
+        }
+
+        // --- PROCEDURAL GELUID EN AUDIO ENGINE ---
+        let audioCtx = null;
+        let ambientSynthInterval = null;
+        let isMuted = false;
+
+        function initAudio() {
+            if (audioCtx) return;
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            startAmbientSounds();
+        }
+
+        function playSynthTone(freq, type, duration, volume = 0.1) {
+            if (isMuted || !audioCtx) return;
+            try {
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type || 'sine';
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                gain.gain.setValueAtTime(volume, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            } catch (e) {
+                console.warn("Geluid mislukt: ", e);
+            }
+        }
+
+        function startAmbientSounds() {
+            if (ambientSynthInterval) clearInterval(ambientSynthInterval);
+            ambientSynthInterval = setInterval(() => {
+                if (isMuted || isPaused) return; 
+                const notes = [65.41, 73.42, 77.78, 87.31, 98.00]; 
+                const randomNote = notes[Math.floor(Math.random() * notes.length)];
+                
+                const renovatedCount = Object.values(gameState.renovations).filter(v => v).length;
+                if (renovatedCount < 3) {
+                    playSynthTone(randomNote, 'sawtooth', 3.0, 0.03); // Ongerust en duister
+                    if (Math.random() > 0.6) {
+                        setTimeout(() => {
+                            if (!isPaused) playSynthTone(randomNote * 8 + (Math.random() * 10 - 5), 'sine', 2.0, 0.012);
+                        }, 1000);
+                    }
+                } else {
+                    const happyNotes = [130.81, 164.81, 196.00, 261.63]; // Rustgevend
+                    playSynthTone(happyNotes[Math.floor(Math.random() * happyNotes.length)], 'sine', 4.0, 0.04);
+                }
+            }, 4000);
+        }
+
+        function playStepSound() {
+            if (gameState.currentRoomId === 'outside') {
+                playSynthTone(120 + Math.random() * 40, 'triangle', 0.08, 0.03);
+            } else {
+                playSynthTone(80 + Math.random() * 30, 'sawtooth', 0.12, 0.02);
+            }
+        }
+
+        function playSpookyWhisper() {
+            playSynthTone(800 + Math.random() * 200, 'sine', 0.5, 0.012);
+            setTimeout(() => {
+                if (!isPaused) playSynthTone(700 + Math.random() * 150, 'sine', 0.4, 0.012);
+            }, 300);
+        }
+
+        function toggleMute() {
+            isMuted = !isMuted;
+            const btn = document.getElementById("hud-mute-btn");
+            if (isMuted) {
+                btn.innerHTML = '<i class="fa-solid fa-volume-xmark text-red-500"></i>';
+            } else {
+                btn.innerHTML = '<i class="fa-solid fa-volume-high"></i>';
+                initAudio();
+                playSynthTone(440, 'sine', 0.2, 0.1);
+            }
+        }
+
+        // --- NOTIFICATIE LOGS ---
+        function pushLog(message, isWarning = false) {
+            const logsContainer = document.getElementById("system-logs");
+            if (!logsContainer) return;
+            
+            const log = document.createElement("div");
+            log.className = `px-3 py-1.5 rounded bg-black/80 border-l-4 shadow-md backdrop-blur-sm transition-all duration-300 transform translate-x-4 opacity-0 ${isWarning ? 'border-red-600 text-red-300' : 'border-stone-500 text-stone-300'}`;
+            log.textContent = message;
+
+            logsContainer.appendChild(log);
+            setTimeout(() => {
+                log.classList.remove("translate-x-4", "opacity-0");
+            }, 10);
+
+            setTimeout(() => {
+                log.classList.add("translate-x-4", "opacity-0");
+                setTimeout(() => log.remove(), 300);
+            }, 4500);
+        }
+
+        // --- AUTOSAVE EN LOAD ---
+        function saveGame() {
+            if (gameState.introActive || !gameStarted) return;
+            
+            if (camera) {
+                gameState.playerPosition = {
+                    x: camera.position.x,
+                    y: camera.position.y,
+                    z: camera.position.z
+                };
+                gameState.playerRotation = {
+                    x: euler.x,
+                    y: euler.y
+                };
+            }
+            
+            if (!isMultiplayer) {
+                localStorage.setItem(SAVE_KEY, JSON.stringify(gameState));
+                pushLog("💾 Spel automatisch opgeslagen...");
+            } else {
+                syncLocalStateToCloud();
+            }
+        }
+
+        function loadSavedGame() {
+            const data = localStorage.getItem(SAVE_KEY);
+            if (data) {
+                try {
+                    const parsed = JSON.parse(data);
+                    gameState = { ...gameState, ...parsed };
+                    
+                    if (gameState.flashlightCollected) {
+                        document.getElementById("battery-hud").classList.remove("hidden");
+                    }
+                    if (gameState.playerName) {
+                        document.getElementById("global-name-input").value = gameState.playerName;
+                        myPlayerName = gameState.playerName;
+                    }
+                    return true;
+                } catch (e) {
+                    console.error("Fout bij laden van opslagbestand", e);
+                }
+            }
+            return false;
+        }
+
+        function checkExistingSave() {
+            const data = localStorage.getItem(SAVE_KEY);
+            if (data) {
+                document.getElementById("btn-continue").classList.remove("hidden");
+            }
+        }
+
+        // --- 3D ENGINE, FYSICA EN CONTROLS ---
+        let scene, camera, renderer, clock;
+        let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false;
+        let velocity = new THREE.Vector3();
+        let direction = new THREE.Vector3();
+        let euler = new THREE.Euler(0, 0, 0, 'YXZ');
+        let raycaster = new THREE.Raycaster();
+        let mouse = new THREE.Vector2(0, 0); 
+        
+        let isPaused = false; 
+        let gameStarted = false; 
+        let fallbackActive = false; 
+        let isDragging = false;
+        let previousMousePosition = { x: 0, y: 0 };
+        
+        let canJump = true; 
+        let lastStepTime = 0;
+        let PLAYER_SPEED = 6.0;
+        const COLLISION_RADIUS = 0.8;
+
+        let flashlightLight = null;
+        let interactiveObjects = [];
+        let currentlyLookingAt = null;
+        let dollMesh = null;
+        let dollActive = false;
+        let dollSpookyTimer = 0;
+        let doorMeshObj = null;
+
+        // Eerste persoon armen en benen container
+        let firstPersonGroup = null;
+        let fpLeftArm, fpRightArm, fpLeftLeg, fpRightLeg;
+
+        // Level-poorten references
+        let barrierLevel2 = null;
+        let barrierLevel3 = null;
+        let barrierLevel4 = null;
+        let mapColliders = [];
+
+        const mistRoomBounds = { minX: -10, maxX: 10, minZ: -25, maxZ: 10 };
+
+        // --- HULPFUNCTIE OM MUREN TE BOUWEN ---
+        function addWall(x, z, width, depth, height, texType, yOffset = 0) {
+            const tex = createProceduralTexture(texType);
+            tex.repeat.set(width / 4, height / 4);
+            const mat = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.95 });
+            const geo = new THREE.BoxGeometry(width, height, depth);
+            const wall = new THREE.Mesh(geo, mat);
+            wall.position.set(x, height / 2 + yOffset, z);
+            wall.receiveShadow = true;
+            wall.castShadow = true;
+            scene.add(wall);
+            
+            const col = new THREE.Box3().setFromObject(wall);
+            mapColliders.push(col);
+            return wall;
+        }
+
+        // --- PROCEDURALE TEXTUUR ENGINE ---
+        function createProceduralTexture(type) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 256;
+            canvas.height = 256;
+            const ctx = canvas.getContext('2d');
+
+            if (type === 'wood') {
+                ctx.fillStyle = '#2f1a10';
+                ctx.fillRect(0, 0, 256, 256);
+                ctx.fillStyle = '#140c08';
+                for (let i = 0; i < 256; i += 32) {
+                    ctx.fillRect(0, i, 256, 3);
+                    ctx.fillStyle = '#3a2217';
+                    for (let j = 0; j < 6; j++) {
+                        ctx.fillRect(Math.random() * 256, i + Math.random() * 28, Math.random() * 60 + 20, 1);
+                    }
+                }
+                ctx.fillStyle = 'rgba(25, 40, 15, 0.4)';
+                for (let k = 0; k < 12; k++) {
+                    ctx.beginPath();
+                    ctx.arc(Math.random() * 256, Math.random() * 256, Math.random() * 20 + 8, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            } else if (type === 'exterior-brick') {
+                ctx.fillStyle = '#3a2d2a';
+                ctx.fillRect(0, 0, 256, 256);
+                ctx.fillStyle = '#211a18';
+                for (let y = 0; y < 256; y += 32) {
+                    let offset = (y / 32) % 2 === 0 ? 0 : 32;
+                    ctx.fillRect(0, y, 256, 2);
+                    for (let x = -offset; x < 256; x += 64) {
+                        ctx.fillRect(x + 2, y + 2, 60, 28);
+                    }
+                }
+                ctx.fillStyle = 'rgba(34, 55, 18, 0.65)';
+                for (let k = 0; k < 15; k++) {
+                    ctx.beginPath();
+                    ctx.arc(Math.random() * 256, Math.random() * 256, Math.random() * 25 + 15, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            } else if (type === 'interior-wall') {
+                ctx.fillStyle = '#4a3f35'; // Griebelig oud behang
+                ctx.fillRect(0, 0, 256, 256);
+                ctx.fillStyle = '#362b22';
+                for(let i = 0; i < 256; i += 64) {
+                    ctx.fillRect(i, 0, 16, 256);
+                }
+                ctx.fillStyle = 'rgba(23, 38, 14, 0.65)'; // Schimmel/mosvlekken
+                for (let k = 0; k < 12; k++) {
+                    ctx.beginPath();
+                    ctx.arc(Math.random() * 256, Math.random() * 256, Math.random() * 25 + 5, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            } else if (type === 'grass') {
+                ctx.fillStyle = '#142a10';
+                ctx.fillRect(0, 0, 256, 256);
+                ctx.fillStyle = '#223c11';
+                for (let i = 0; i < 2500; i++) {
+                    ctx.fillRect(Math.random() * 256, Math.random() * 256, 2, 4);
+                }
+            } else if (type === 'metal') {
+                ctx.fillStyle = '#2a2f32';
+                ctx.fillRect(0, 0, 256, 256);
+                ctx.fillStyle = '#7a3e1d'; // Roest
+                for (let k = 0; k < 25; k++) {
+                    ctx.beginPath();
+                    ctx.arc(Math.random() * 256, Math.random() * 256, Math.random() * 15 + 5, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.wrapS = THREE.RepeatWrapping;
+            texture.wrapT = THREE.RepeatWrapping;
+            texture.repeat.set(1, 1);
+            return texture;
+        }
+
+        // --- FIRST PERSON MODELLEER SYSTEEM (Armen en Benen) ---
+        function buildFirstPersonLimbs() {
+            firstPersonGroup = new THREE.Group();
+
+            const armGeo = new THREE.BoxGeometry(0.12, 0.12, 0.7);
+            const handGeo = new THREE.SphereGeometry(0.09, 8, 8);
+            const legGeo = new THREE.BoxGeometry(0.16, 0.16, 0.8);
+            const bootGeo = new THREE.BoxGeometry(0.18, 0.18, 0.25);
+
+            const sleeveMat = new THREE.MeshStandardMaterial({ color: 0x5a1818, roughness: 0.9 });
+            const handMat = new THREE.MeshStandardMaterial({ color: 0xffdbac, roughness: 0.7 });
+            const trousersMat = new THREE.MeshStandardMaterial({ color: 0x1d242b, roughness: 0.95 });
+            const bootMat = new THREE.MeshStandardMaterial({ color: 0x0f0e0d, roughness: 0.8 });
+
+            // Linkerarm
+            fpLeftArm = new THREE.Group();
+            const lSleeve = new THREE.Mesh(armGeo, sleeveMat);
+            lSleeve.position.z = -0.3;
+            const lHand = new THREE.Mesh(handGeo, handMat);
+            lHand.position.z = -0.65;
+            fpLeftArm.add(lSleeve, lHand);
+            fpLeftArm.position.set(-0.35, -0.28, -0.35);
+            firstPersonGroup.add(fpLeftArm);
+
+            // Rechterarm
+            fpRightArm = new THREE.Group();
+            const rSleeve = new THREE.Mesh(armGeo, sleeveMat);
+            rSleeve.position.z = -0.3;
+            const rHand = new THREE.Mesh(handGeo, handMat);
+            rHand.position.z = -0.65;
+            fpRightArm.add(rSleeve, rHand);
+            fpRightArm.position.set(0.35, -0.28, -0.35);
+            firstPersonGroup.add(fpRightArm);
+
+            // Linkerbeen
+            fpLeftLeg = new THREE.Group();
+            const lTrouser = new THREE.Mesh(legGeo, trousersMat);
+            lTrouser.position.z = -0.35;
+            const lBoot = new THREE.Mesh(bootGeo, bootMat);
+            lBoot.position.set(0, -0.05, -0.75);
+            fpLeftLeg.add(lTrouser, lBoot);
+            fpLeftLeg.position.set(-0.25, -0.6, -0.1);
+            fpLeftLeg.rotation.x = 0.2;
+            firstPersonGroup.add(fpLeftLeg);
+
+            // Rechterbeen
+            fpRightLeg = new THREE.Group();
+            const rTrouser = new THREE.Mesh(legGeo, trousersMat);
+            rTrouser.position.z = -0.35;
+            const rBoot = new THREE.Mesh(bootGeo, bootMat);
+            rBoot.position.set(0, -0.05, -0.75);
+            fpRightLeg.add(rTrouser, rBoot);
+            fpRightLeg.position.set(0.25, -0.6, -0.1);
+            fpRightLeg.rotation.x = 0.2;
+            firstPersonGroup.add(fpRightLeg);
+
+            camera.add(firstPersonGroup);
+            scene.add(camera); 
+        }
+
+        // --- LOOT / LOSSE SPULLEN OP DE GROND SPRAWNEN EN OPPAKKEN ---
+        function createCollectibleItem(x, y, z, type, amount = 1) {
+            const group = new THREE.Group();
+            let mesh;
+            let displayName = "";
+
+            if (type === 'wood') {
+                // Cylindrisch houtblok
+                const geo = new THREE.CylinderGeometry(0.12, 0.12, 0.45, 8);
+                const mat = new THREE.MeshStandardMaterial({ color: 0x8b5a2b, roughness: 0.95 });
+                mesh = new THREE.Mesh(geo, mat);
+                mesh.rotation.x = Math.PI / 2;
+                mesh.rotation.z = Math.random() * Math.PI;
+                group.add(mesh);
+                displayName = "Houtblok";
+            } else if (type === 'metal') {
+                // Metalen schroot stuk
+                const geo = new THREE.BoxGeometry(0.25, 0.25, 0.25);
+                const mat = new THREE.MeshStandardMaterial({ color: 0x708090, metalness: 0.9, roughness: 0.4 });
+                mesh = new THREE.Mesh(geo, mat);
+                mesh.rotation.y = Math.random() * Math.PI;
+                group.add(mesh);
+                displayName = "Oud Metaal";
+            } else if (type === 'food') {
+                // Voedsel blikje
+                const geo = new THREE.CylinderGeometry(0.1, 0.1, 0.22, 10);
+                const mat = new THREE.MeshStandardMaterial({ color: 0x2e7d32, metalness: 0.5, roughness: 0.2 });
+                mesh = new THREE.Mesh(geo, mat);
+                group.add(mesh);
+                displayName = "Voedselrantsoen";
+            }
+
+            group.position.set(x, y + 0.1, z);
+            group.castShadow = true;
+            group.receiveShadow = true;
+            scene.add(group);
+
+            const itemId = `item_${type}_${Math.round(x)}_${Math.round(y)}_${Math.round(z)}_${Math.floor(Math.random()*1000)}`;
+            group.name = itemId;
+
+            // Maak de mesh interactief voor de raycaster
+            mesh.userData = {
+                interactive: true,
+                name: `${displayName} [Druk op E om op te pakken]`,
+                interact: function() {
+                    playSynthTone(500, 'sine', 0.15, 0.15); // Helder opraapgeluid
+                    
+                    if (type === 'wood') {
+                        gameState.inventory.wood += amount;
+                        pushLog(`+${amount} Houtblokken toegevoegd aan je rugzak!`);
+                    } else if (type === 'metal') {
+                        gameState.inventory.metal += amount;
+                        pushLog(`+${amount} Oud Metaal toegevoegd aan je rugzak!`);
+                    } else if (type === 'food') {
+                        gameState.inventory.food += amount;
+                        pushLog(`+${amount} Voedselblik toegevoegd aan je rugzak!`);
+                    }
+
+                    // Verwijder mesh uit 3D wereld
+                    scene.remove(group);
+                    interactiveObjects = interactiveObjects.filter(o => o !== mesh);
+
+                    // Multiplayer synchronisatie
+                    if (isMultiplayer && db && firebaseUser) {
+                        db.collection('artifacts').doc(appId).collection('public').doc('data')
+                          .collection('sessions').doc(multiplayerRoomId).collection('actions').add({
+                              type: 'collect_item',
+                              itemId: itemId,
+                              byUser: myPlayerName,
+                              timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                          });
+                    }
+
+                    saveGame();
+                    updateHUD();
+                }
+            };
+
+            interactiveObjects.push(mesh);
+        }
+
+        // Universele methode om objecten en spullen per ID te verwijderen
+        function removeItemById(itemId) {
+            const itemGroup = scene.getObjectByName(itemId);
+            if (itemGroup) {
+                scene.remove(itemGroup);
+                itemGroup.traverse(child => {
+                    interactiveObjects = interactiveObjects.filter(o => o !== child);
+                });
+            }
+        }
+
+        // --- KISTEN BOUWEN & ACTIES ---
+        function createCrate(x, y, z, texType, resourceType) {
+            const geo = new THREE.BoxGeometry(1.5, 1.3, 1.5);
+            const mat = new THREE.MeshStandardMaterial({ map: createProceduralTexture(texType), roughness: 0.85 });
+            const crate = new THREE.Mesh(geo, mat);
+            crate.position.set(x, y + 0.65, z);
+            crate.castShadow = true;
+            crate.receiveShadow = true;
+            scene.add(crate);
+
+            const col = new THREE.Box3().setFromObject(crate);
+            mapColliders.push(col);
+
+            const crateId = `crate_${Math.round(x)}_${Math.round(y)}_${Math.round(z)}`;
+            crate.name = crateId;
+
+            crate.userData = {
+                interactive: true,
+                name: `Houten Kist (Sloopbaar) [Bevat mogelijk ${resourceType}]`,
+                collider: col,
+                interact: function() {
+                    if (gameState.axeCollected) {
+                        playSynthTone(120, 'sawtooth', 0.4, 0.25);
+                        pushLog(`Je slaat de kist kapot met je bijl!`);
+                        
+                        // Fysiek lootsysteem: Spullen vallen daadwerkelijk uit de kist op de vloer!
+                        const px = crate.position.x;
+                        const py = crate.position.y - 0.65; // Op vloerniveau
+                        const pz = crate.position.z;
+
+                        if (resourceType === "Hout") {
+                            const count = 2 + Math.floor(Math.random() * 2);
+                            for (let i = 0; i < count; i++) {
+                                createCollectibleItem(px + (Math.random() - 0.5) * 0.8, py, pz + (Math.random() - 0.5) * 0.8, 'wood', 1);
+                            }
+                            pushLog(`Er zijn houtblokken uit de kist gevallen!`);
+                        } else if (resourceType === "Metaal") {
+                            const count = 1 + Math.floor(Math.random() * 2);
+                            for (let i = 0; i < count; i++) {
+                                createCollectibleItem(px + (Math.random() - 0.5) * 0.8, py, pz + (Math.random() - 0.5) * 0.8, 'metal', 1);
+                            }
+                            pushLog(`Er is oud metaal uit de kist gevallen!`);
+                        } else if (resourceType === "Eten") {
+                            createCollectibleItem(px, py, pz, 'food', 1);
+                            pushLog(`Er is een voedselrantsoen uit de kist gevallen!`);
+                        }
+                        
+                        removeCrateById(crateId);
+
+                        if (isMultiplayer && db && firebaseUser) {
+                            db.collection('artifacts').doc(appId).collection('public').doc('data')
+                              .collection('sessions').doc(multiplayerRoomId).collection('actions').add({
+                                  type: 'destroy_crate',
+                                  crateId: crateId,
+                                  byUser: myPlayerName,
+                                  timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                              });
+                        }
+                        saveGame();
+                    } else {
+                        pushLog("Dit is een stevige kist. Je hebt een Hakbijl nodig om hem te slopen.", true);
+                    }
+                }
+            };
+            interactiveObjects.push(crate);
+        }
+
+        function removeCrateById(crateId) {
+            const crate = scene.getObjectByName(crateId);
+            if (crate) {
+                scene.remove(crate);
+                interactiveObjects = interactiveObjects.filter(o => o !== crate);
+                if (crate.userData && crate.userData.collider) {
+                    mapColliders = mapColliders.filter(c => c !== crate.userData.collider);
+                }
+            }
+        }
+
+        // --- REINIGEN VAN DE LEVEL BARRIÈRES ---
+        function buildLevelGates() {
+            if (!gameState.renovations.wall) {
+                const geo = new THREE.BoxGeometry(3.5, 3.5, 0.2);
+                const mat = new THREE.MeshStandardMaterial({ color: 0xff0055, transparent: true, opacity: 0.6, emissive: 0xff0055, emissiveIntensity: 0.5 });
+                const mesh = new THREE.Mesh(geo, mat);
+                mesh.position.set(8, 5.75, 1);
+                scene.add(mesh);
+                barrierLevel2 = mesh;
+                
+                const col = new THREE.Box3().setFromObject(mesh);
+                mapColliders.push(col);
+
+                mesh.userData = {
+                    interactive: true,
+                    name: "Spookachtige Barrière (Vergrendeld)",
+                    collider: col,
+                    interact: function() {
+                        pushLog("Dit hek is verzegeld met spookachtige runen! Los Level 2 op door de kapotte muur op het Gelijkvloers te herstellen.", true);
+                    }
+                };
+                interactiveObjects.push(mesh);
+            }
+
+            if (!gameState.renovations.window) {
+                const geo = new THREE.BoxGeometry(3.5, 3.5, 0.2);
+                const mat = new THREE.MeshStandardMaterial({ color: 0x00aaff, transparent: true, opacity: 0.6, emissive: 0x00aaff, emissiveIntensity: 0.5 });
+                const mesh = new THREE.Mesh(geo, mat);
+                mesh.position.set(8, 9.75, 9);
+                scene.add(mesh);
+                barrierLevel3 = mesh;
+
+                const col = new THREE.Box3().setFromObject(mesh);
+                mapColliders.push(col);
+
+                mesh.userData = {
+                    interactive: true,
+                    name: "IJzige Windbarrière (Vergrendeld)",
+                    collider: col,
+                    interact: function() {
+                        pushLog("Een extreme vrieswind snijdt door de gang! Los Level 3 op door het gebroken raam op de 1e verdieping te vervangen.", true);
+                    }
+                };
+                interactiveObjects.push(mesh);
+            }
+
+            if (!gameState.renovations.door) {
+                const geo = new THREE.BoxGeometry(3.5, 3.5, 0.2);
+                const mat = new THREE.MeshStandardMaterial({ color: 0x5500ff, transparent: true, opacity: 0.6, emissive: 0x5500ff, emissiveIntensity: 0.5 });
+                const mesh = new THREE.Mesh(geo, mat);
+                mesh.position.set(8, 13.75, 1);
+                scene.add(mesh);
+                barrierLevel4 = mesh;
+
+                const col = new THREE.Box3().setFromObject(mesh);
+                mapColliders.push(col);
+
+                mesh.userData = {
+                    interactive: true,
+                    name: "Duistere Mistbarrière (Vergrendeld)",
+                    collider: col,
+                    interact: function() {
+                        pushLog("Een dikke paranormale mist blokkeert de doorgang! Los Level 4 op door de deurstijl op de 2e verdieping te herstellen.", true);
+                    }
+                };
+                interactiveObjects.push(mesh);
+            }
+        }
+
+        function checkLevelUnlocks() {
+            if (gameState.renovations.wall && barrierLevel2) {
+                scene.remove(barrierLevel2);
+                interactiveObjects = interactiveObjects.filter(o => o !== barrierLevel2);
+                mapColliders = mapColliders.filter(c => c !== barrierLevel2.userData.collider);
+                barrierLevel2 = null;
+                gameState.currentLevel = Math.max(gameState.currentLevel, 3);
+                pushLog("🔓 Level 2 voltooid! De Spookachtige Barrière is verdwenen. Je kunt nu naar de 2e verdieping!");
+            }
+            if (gameState.renovations.window && barrierLevel3) {
+                scene.remove(barrierLevel3);
+                interactiveObjects = interactiveObjects.filter(o => o !== barrierLevel3);
+                mapColliders = mapColliders.filter(c => c !== barrierLevel3.userData.collider);
+                barrierLevel3 = null;
+                gameState.currentLevel = Math.max(gameState.currentLevel, 4);
+                pushLog("🔓 Level 3 voltooid! De IJzige Windbarrière is gaan liggen. Je kunt naar de 3e verdieping!");
+            }
+            if (gameState.renovations.door && barrierLevel4) {
+                scene.remove(barrierLevel4);
+                interactiveObjects = interactiveObjects.filter(o => o !== barrierLevel4);
+                mapColliders = mapColliders.filter(c => c !== barrierLevel4.userData.collider);
+                barrierLevel4 = null;
+                gameState.currentLevel = Math.max(gameState.currentLevel, 5);
+                pushLog("🔓 Level 4 voltooid! De Mistbarrière is opgetrokken. De weg naar de stoffige zolder (Level 5) is open!");
+            }
+        }
+
+        // --- MAP GENERATIE EN ELEMENTEN ---
+        function addStairs(startX, startZ, endX, endZ, startY, endY, width = 1.8) {
+            const steps = 14;
+            const dx = (endX - startX) / steps;
+            const dz = (endZ - startZ) / steps;
+            const dy = (endY - startY) / steps;
+            const woodTex = createProceduralTexture('wood');
+            const mat = new THREE.MeshStandardMaterial({ map: woodTex, roughness: 0.9 });
+            
+            for (let i = 0; i < steps; i++) {
+                const stepGeo = new THREE.BoxGeometry(width, dy + 0.1, 1.4);
+                const stepMesh = new THREE.Mesh(stepGeo, mat);
+                const px = startX + dx * i;
+                const pz = startZ + dz * i;
+                const py = startY + dy * i + dy / 2;
+                stepMesh.position.set(px, py, pz);
+                stepMesh.receiveShadow = true;
+                stepMesh.castShadow = true;
+                scene.add(stepMesh);
+                mapColliders.push(new THREE.Box3().setFromObject(stepMesh));
+            }
+        }
+
+        // --- LETTER EN BRIEVENBUS ACTIES ---
+        function openMailboxLetter() {
+            initAudio();
+            playSynthTone(300, 'triangle', 0.25, 0.15);
+            const modal = document.getElementById("letter-modal");
+            const codeText = document.getElementById("letter-code-text");
+            if (codeText && gameState.doorCode) {
+                codeText.textContent = `${gameState.doorCode.dial1} - ${gameState.doorCode.dial2} - ${gameState.doorCode.dial3}`;
+            }
+            modal.classList.remove("hidden");
+            isPaused = true;
+            document.exitPointerLock();
+            pushLog("✉️ Je vindt en leest een oude brief in de brievenbus...");
+        }
+
+        function closeLetterModal() {
+            document.getElementById("letter-modal").classList.add("hidden");
+            isPaused = false;
+            document.getElementById("canvas-container").requestPointerLock();
+        }
+
+        function checkKeySearch(locationId, locationName) {
+            if (gameState.outsideKeyCollected) {
+                pushLog("Je hebt de sleutel hier al gevonden.");
+                return;
+            }
+            if (gameState.keyLocationId === locationId) {
+                gameState.outsideKeyCollected = true;
+                pushLog(`Je doorzoekt ${locationName} en vindt de HUISSLEUTEL!`);
+                playSynthTone(500, 'sine', 0.2, 0.1);
+                
+                if (isMultiplayer) {
+                    syncLocalStateToCloud();
+                }
+                saveGame();
+            } else {
+                pushLog(`Je doorzoekt ${locationName}, maar er ligt alleen wat oud vuil...`, true);
+                playSynthTone(200, 'triangle', 0.15, 0.05);
+            }
+        }
+
+        function buildMap() {
+            // Gras ondergrond buiten
+            const grassTex = createProceduralTexture('grass');
+            grassTex.repeat.set(20, 20);
+            const grassMat = new THREE.MeshStandardMaterial({ map: grassTex, roughness: 0.9 });
+            const grassGeo = new THREE.PlaneGeometry(80, 80);
+            const grass = new THREE.Mesh(grassGeo, grassMat);
+            grass.rotation.x = -Math.PI / 2;
+            grass.receiveShadow = true;
+            scene.add(grass);
+
+            // Gelijkvloers vloer inside
+            const floorTex = createProceduralTexture('wood');
+            floorTex.repeat.set(10, 10);
+            const floorMat = new THREE.MeshStandardMaterial({ map: floorTex, roughness: 0.7 });
+            const floorGeo = new THREE.PlaneGeometry(40, 35);
+            const floor = new THREE.Mesh(floorGeo, floorMat);
+            floor.rotation.x = -Math.PI / 2;
+            floor.position.set(0, 0.01, -7.5);
+            floor.receiveShadow = true;
+            scene.add(floor);
+
+            // Verdiepingsvloeren (5 verdiepingen)
+            for (let f = 1; f <= 4; f++) {
+                const floorY = f * 4;
+                const floorGeo1 = new THREE.PlaneGeometry(16, 35);
+                const fl1 = new THREE.Mesh(floorGeo1, floorMat);
+                fl1.rotation.x = -Math.PI / 2;
+                fl1.position.set(-2, floorY + 0.01, -7.5);
+                fl1.receiveShadow = true;
+                scene.add(fl1);
+                mapColliders.push(new THREE.Box3().setFromObject(fl1));
+
+                const floorGeo2 = new THREE.PlaneGeometry(4, 25);
+                const fl2 = new THREE.Mesh(floorGeo2, floorMat);
+                fl2.rotation.x = -Math.PI / 2;
+                fl2.position.set(8, floorY + 0.01, -12.5);
+                fl2.receiveShadow = true;
+                scene.add(fl2);
+                mapColliders.push(new THREE.Box3().setFromObject(fl2));
+            }
+
+            // --- PLAFONDS TOEGEVOEGD OM DOORKIJK TE VOORKOMEN (Niet door het dak kijken) ---
+            const ceilingTex = createProceduralTexture('wood');
+            ceilingTex.repeat.set(10, 10);
+            // BackSide zorgt ervoor dat het plafond zichtbaar is wanneer je omhoog kijkt van binnenuit
+            const ceilingMat = new THREE.MeshStandardMaterial({ map: ceilingTex, roughness: 0.95, side: THREE.BackSide });
+            
+            for (let f = 1; f <= 5; f++) {
+                const ceilingY = f * 4 - 0.05; // Net onder de vloer erboven / het dak
+
+                // Plafond links
+                const ceilGeo1 = new THREE.PlaneGeometry(16, 35);
+                const ceil1 = new THREE.Mesh(ceilGeo1, ceilingMat);
+                ceil1.rotation.x = Math.PI / 2;
+                ceil1.position.set(-2, ceilingY, -7.5);
+                ceil1.receiveShadow = true;
+                scene.add(ceil1);
+
+                // Plafond rechts
+                const ceilGeo2 = new THREE.PlaneGeometry(4, 25);
+                const ceil2 = new THREE.Mesh(ceilGeo2, ceilingMat);
+                ceil2.rotation.x = Math.PI / 2;
+                ceil2.position.set(8, ceilingY, -12.5);
+                ceil2.receiveShadow = true;
+                scene.add(ceil2);
+            }
+
+            // Trappenhuizen: parallel NAAST ELKAAR gebouwd (Flight A en Flight B zij-aan-zij)
+            addStairs(7.0, 9, 7.0, 1, 0, 4, 1.8);   // Level 1 -> 2 (Linkse flight)
+            addStairs(9.0, 1, 9.0, 9, 4, 8, 1.8);   // Level 2 -> 3 (Rechtse flight)
+            addStairs(7.0, 9, 7.0, 1, 8, 12, 1.8);  // Level 3 -> 4 (Linkse flight)
+            addStairs(9.0, 1, 9.0, 9, 12, 16, 1.8); // Level 4 -> 5 (Rechtse flight)
+
+            // Jouw Tent (Buiten)
+            const tentGroup = new THREE.Group();
+            const tentGeo = new THREE.ConeGeometry(2, 2.5, 4);
+            const tentMat = new THREE.MeshStandardMaterial({ color: 0x2e7d32, roughness: 0.9 });
+            const tent = new THREE.Mesh(tentGeo, tentMat);
+            tent.rotation.y = Math.PI / 4;
+            tent.position.set(6, 1.25, 16);
+            tentGroup.add(tent);
+            scene.add(tentGroup);
+
+            tent.userData = {
+                interactive: true,
+                get name() {
+                    return gameState.insideTent ? "Tent verlaten" : "Jouw Tent (Binnengaan / Slapen)";
+                },
+                interact: function() {
+                    if (!gameState.insideTent) {
+                        enterTent();
+                    } else {
+                        exitTent();
+                    }
+                }
+            };
+            interactiveObjects.push(tent);
+            mapColliders.push(new THREE.Box3().setFromObject(tent));
+
+            // --- DEURSLEUTEL & BRIEF ZOEKLOCATIES ---
+            // 1. Brievenbus (Altijd met brief, soms ook met sleutel!)
+            const boxGeo = new THREE.BoxGeometry(0.6, 0.4, 0.4);
+            const boxMat = new THREE.MeshStandardMaterial({ color: 0x4a4a4a, roughness: 0.5 });
+            const mailbox = new THREE.Mesh(boxGeo, boxMat);
+            mailbox.position.set(-4, 1.4, 15);
+            mailbox.castShadow = true;
+            scene.add(mailbox);
+
+            const poleGeo = new THREE.CylinderGeometry(0.05, 0.05, 1.2);
+            const pole = new THREE.Mesh(poleGeo, boxMat);
+            pole.position.set(-4, 0.6, 15);
+            scene.add(pole);
+
+            mapColliders.push(new THREE.Box3().setFromObject(mailbox));
+            mailbox.userData = {
+                interactive: true,
+                name: "Oude Brievenbus (Openen)",
+                interact: function() {
+                    openMailboxLetter(); // Opent de brief met code-overlay!
+                    checkKeySearch("mailbox", "de oude brievenbus");
+                }
+            };
+            interactiveObjects.push(mailbox);
+
+            // 2. Stapel bakstenen
+            const bricksGroup = new THREE.Group();
+            const brickMat = new THREE.MeshStandardMaterial({ color: 0x7a3e20, roughness: 0.9 });
+            for (let i = 0; i < 4; i++) {
+                const brick = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.25, 0.3), brickMat);
+                brick.position.set(-8 + (i * 0.15), 0.125, 11 + (Math.sin(i) * 0.1));
+                brick.rotation.y = i * 0.4;
+                brick.castShadow = true;
+                bricksGroup.add(brick);
+            }
+            scene.add(bricksGroup);
+            mapColliders.push(new THREE.Box3().setFromObject(bricksGroup));
+
+            const bricksInteract = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.6, 1.2), new THREE.MeshBasicMaterial({ visible: false }));
+            bricksInteract.position.set(-8, 0.3, 11);
+            scene.add(bricksInteract);
+            interactiveObjects.push(bricksInteract);
+            bricksInteract.userData = {
+                interactive: true,
+                name: "Stapel Oude Bakstenen",
+                interact: function() {
+                    checkKeySearch("bricks", "de stapel bakstenen");
+                }
+            };
+
+            // 3. Holle Boomstronk
+            const stumpGroup = new THREE.Group();
+            const stumpMat = new THREE.MeshStandardMaterial({ map: createProceduralTexture('wood'), roughness: 0.95 });
+            const stump = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.45, 0.8, 8), stumpMat);
+            stump.position.set(8, 0.4, 13);
+            stump.castShadow = true;
+            stumpGroup.add(stump);
+            scene.add(stumpGroup);
+            mapColliders.push(new THREE.Box3().setFromObject(stumpGroup));
+
+            const stumpInteract = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial({ visible: false }));
+            stumpInteract.position.set(8, 0.5, 13);
+            scene.add(stumpInteract);
+            interactiveObjects.push(stumpInteract);
+            stumpInteract.userData = {
+                interactive: true,
+                name: "Holle Boomstronk",
+                interact: function() {
+                    checkKeySearch("stump", "de holle boomstronk");
+                }
+            };
+
+            // 4. Vogelhuisje
+            const birdGroup = new THREE.Group();
+            const bWoodMat = new THREE.MeshStandardMaterial({ color: 0x5c4033, roughness: 0.8 });
+            const bHouse = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.5, 0.4), bWoodMat);
+            bHouse.position.set(-6, 0.25, 19);
+            bHouse.rotation.z = Math.PI / 3;
+            bHouse.rotation.y = 0.5;
+            bHouse.castShadow = true;
+            birdGroup.add(bHouse);
+            scene.add(birdGroup);
+            mapColliders.push(new THREE.Box3().setFromObject(birdGroup));
+
+            bHouse.userData = {
+                interactive: true,
+                name: "Gevallen Vogelhuisje",
+                interact: function() {
+                    checkKeySearch("birdhouse", "het gevallen vogelhuisje");
+                }
+            };
+            interactiveObjects.push(bHouse);
+
+            // Buiten- en binnenmuren
+            addWall(-10, -7.5, 0.5, 35, 20, 'exterior-brick');
+            addWall(10, -7.5, 0.5, 35, 20, 'exterior-brick');
+            addWall(0, -25, 20, 0.5, 20, 'exterior-brick');
+
+            // Voorgevel & ramen
+            addWall(-6, 10, 8, 0.5, 4, 'exterior-brick');
+            addWall(6, 10, 8, 0.5, 4, 'exterior-brick');
+            addWall(0, 10, 4, 0.5, 1, 'exterior-brick', 3);
+            addWall(0, 10, 20, 0.5, 16, 'exterior-brick', 4);
+
+            // Gele verlichte flikkerende ramen (buitenkant)
+            for (let f = 1; f <= 4; f++) {
+                const wGeo = new THREE.BoxGeometry(2, 2, 0.1);
+                const wMat = new THREE.MeshStandardMaterial({ color: 0xffdd44, emissive: 0xffbb22, emissiveIntensity: 1.0 });
+                const windowLeft = new THREE.Mesh(wGeo, wMat);
+                windowLeft.position.set(-4, f * 4 + 2, 10.1);
+                scene.add(windowLeft);
+
+                const windowRight = new THREE.Mesh(wGeo, wMat);
+                windowRight.position.set(4, f * 4 + 2, 10.1);
+                scene.add(windowRight);
+            }
+
+            // De grote eiken voordeur
+            const doorGeo = new THREE.BoxGeometry(3.8, 3, 0.25);
+            const doorMat = new THREE.MeshStandardMaterial({ color: 0x2b1a0e, roughness: 0.95 });
+            const door = new THREE.Mesh(doorGeo, doorMat);
+            door.position.set(0, 1.5, 10);
+            door.castShadow = true;
+            scene.add(door);
+            doorMeshObj = door;
+
+            const doorCollider = new THREE.Box3().setFromObject(door);
+            door.userData = {
+                interactive: true,
+                name: "Zware Eiken Voordeur",
+                collider: doorCollider,
+                interact: function() {
+                    if (gameState.frontDoorUnlocked) {
+                        pushLog("De eiken voordeur staat open.");
+                    } else if (gameState.outsideKeyCollected) {
+                        openDoorPuzzle();
+                    } else {
+                        pushLog("De deur zit op slot. Heb je de buitenplaats goed gezocht naar de sleutel?", true);
+                    }
+                }
+            };
+            interactiveObjects.push(door);
+
+            if (!gameState.frontDoorUnlocked) {
+                mapColliders.push(doorCollider);
+            } else {
+                door.position.y = -5;
+            }
+
+            // Houten Trap Barricade (Level 1)
+            if (!gameState.barricadeDestroyed) {
+                const barGeo = new THREE.BoxGeometry(3.8, 3, 0.4);
+                const barMat = new THREE.MeshStandardMaterial({ map: createProceduralTexture('wood'), roughness: 0.9 });
+                const barricade = new THREE.Mesh(barGeo, barMat);
+                barricade.position.set(8, 1.5, 8.5);
+                barricade.castShadow = true;
+                scene.add(barricade);
+
+                const barricadeCollider = new THREE.Box3().setFromObject(barricade);
+                barricade.userData = {
+                    interactive: true,
+                    name: "Houten Barricade (Blokkeert Trap)",
+                    collider: barricadeCollider,
+                    interact: function() {
+                        if (gameState.axeCollected) {
+                            gameState.barricadeDestroyed = true;
+                            playSynthTone(180, 'sawtooth', 0.6, 0.25);
+                            pushLog("KRAAAK! Je slaat de barricade aan puin met je bijl.");
+                            scene.remove(barricade);
+                            interactiveObjects = interactiveObjects.filter(o => o !== barricade);
+                            mapColliders = mapColliders.filter(c => c !== barricadeCollider);
+                            gameState.currentLevel = Math.max(gameState.currentLevel, 2);
+                            pushLog("🎉 Level 1 voltooid! De weg naar de 1e verdieping is nu open!");
+                            saveGame();
+                        } else {
+                            pushLog("De trap is dichtgespijkerd met dikke houten planken. Vind een bijl om de barricade te slopen.", true);
+                        }
+                    }
+                };
+                interactiveObjects.push(barricade);
+                mapColliders.push(barricadeCollider);
+            }
+
+            // De hakbijl (Level 1)
+            if (!gameState.axeCollected) {
+                const axeGroup = new THREE.Group();
+                const handleGeo = new THREE.CylinderGeometry(0.03, 0.03, 0.8);
+                const handleMat = new THREE.MeshStandardMaterial({ color: 0x5d4037 });
+                const handle = new THREE.Mesh(handleGeo, handleMat);
+                handle.rotation.z = Math.PI / 4;
+                axeGroup.add(handle);
+
+                const headGeo = new THREE.BoxGeometry(0.2, 0.3, 0.1);
+                const headMat = new THREE.MeshStandardMaterial({ color: 0x90a4ae, metalness: 0.9 });
+                const head = new THREE.Mesh(headGeo, headMat);
+                head.position.set(0.2, 0.3, 0);
+                axeGroup.add(head);
+
+                axeGroup.position.set(-6, 0.5, -2);
+                scene.add(axeGroup);
+
+                head.userData = {
+                    interactive: true,
+                    name: "Scherpe Hakbijl",
+                    interact: function() {
+                        gameState.axeCollected = true;
+                        pushLog("Je raapt de SCHERPE HAKBIJL op! Sloop hiermee de trapbarricade en kisten.");
+                        playSynthTone(400, 'sawtooth', 0.2, 0.1);
+                        scene.remove(axeGroup);
+                        interactiveObjects = interactiveObjects.filter(o => o !== head);
+                        saveGame();
+                    }
+                };
+                interactiveObjects.push(head);
+            }
+
+            // Werkbank (Level 2)
+            const tableGeo = new THREE.BoxGeometry(3, 1, 1.5);
+            const tableMat = new THREE.MeshStandardMaterial({ map: createProceduralTexture('wood'), roughness: 0.9 });
+            const workbench = new THREE.Mesh(tableGeo, tableMat);
+            workbench.position.set(6, 4.5, -8);
+            workbench.castShadow = true;
+            scene.add(workbench);
+
+            workbench.userData = {
+                interactive: true,
+                name: "Werkbank (Materialen Craften)",
+                interact: function() {
+                    toggleInventoryUI();
+                    pushLog("Je opent de werkbank op de 1e verdieping.");
+                }
+            };
+            interactiveObjects.push(workbench);
+            mapColliders.push(new THREE.Box3().setFromObject(workbench));
+
+            // Koevoet (Level 3)
+            if (!gameState.crowbarCollected) {
+                const crowbarGeo = new THREE.CylinderGeometry(0.02, 0.02, 0.8);
+                const crowbarMat = new THREE.MeshStandardMaterial({ color: 0x37474f, metalness: 0.9, roughness: 0.3 });
+                const crowbar = new THREE.Mesh(crowbarGeo, crowbarMat);
+                crowbar.rotation.x = Math.PI / 3;
+                crowbar.position.set(-6, 8.3, -15);
+                scene.add(crowbar);
+
+                crowbar.userData = {
+                    interactive: true,
+                    name: "Stalen Koevoet",
+                    interact: function() {
+                        gameState.crowbarCollected = true;
+                        pushLog("Je raapt de STALEN KOEVOET op! Hiermee kun je de nooduitgang op de zolder openbreken.");
+                        playSynthTone(500, 'sine', 0.15, 0.15);
+                        scene.remove(crowbar);
+                        interactiveObjects = interactiveObjects.filter(o => o !== crowbar);
+                        saveGame();
+                    }
+                };
+                interactiveObjects.push(crowbar);
+            }
+
+            // Kisten plaatsen
+            createCrate(-7, 0, 4, 'wood', "Hout");       
+            createCrate(-4, 4, -4, 'wood', "Metaal");    
+            createCrate(4, 8, -12, 'wood', "Eten");      
+            createCrate(-5, 12, -8, 'wood', "Hout");     
+
+            // --- LOOT SPULLEN PLAATSEN (OP GROND EN IN KAMERS) ---
+            // Buiten
+            createCollectibleItem(4, 0, 18, 'wood');
+            createCollectibleItem(-9, 0, 12, 'metal');
+            
+            // Level 1: Gelijkvloers inside
+            createCollectibleItem(8, 0, 5, 'wood');
+            createCollectibleItem(-7, 0, -10, 'metal');
+
+            // Level 2: 1e verdieping (Sommige op de werkbank!)
+            createCollectibleItem(6.2, 4.5, -8, 'metal');   // Op werkbank
+            createCollectibleItem(5.8, 4.5, -8, 'food');    // Op werkbank
+            createCollectibleItem(2, 4, -4, 'wood');
+
+            // Level 3: 2e verdieping
+            createCollectibleItem(8, 8, 5, 'food');
+            createCollectibleItem(-4, 8, -6, 'metal');
+
+            // Level 4: 3e verdieping (Mistkamer - Spannende plekken!)
+            createCollectibleItem(3, 12, -10, 'wood');
+            createCollectibleItem(-3, 12, -14, 'metal');
+
+            // Level 5: 4e verdieping (Zolder)
+            createCollectibleItem(-8, 16, -10, 'food');
+            createCollectibleItem(2, 16, -12, 'metal');
+
+            // Mistkamer muur scheiding (Level 4)
+            addWall(-5, -12, 0.5, 10, 4, 'interior-wall', 12);
+            buildDoll(); // De weeping angel pop
+
+            // Nooduitgang (Level 5)
+            const exitDoorGeo = new THREE.BoxGeometry(0.3, 3.5, 3);
+            const exitDoorMat = new THREE.MeshStandardMaterial({ color: 0x1a0a0a, metalness: 0.9, roughness: 0.2 });
+            const exitDoor = new THREE.Mesh(exitDoorGeo, exitDoorMat);
+            exitDoor.position.set(-9.8, 17.75, -2);
+            exitDoor.castShadow = true;
+            scene.add(exitDoor);
+
+            exitDoor.userData = {
+                interactive: true,
+                name: "Geheime Zolderdeur (Nooduitgang naar dakterras)",
+                interact: function() {
+                    const renovatedCount = Object.values(gameState.renovations).filter(v => v).length;
+                    
+                    if (gameState.basementDoorUnlocked) {
+                        endGame(true);
+                    } else if (gameState.crowbarCollected) {
+                        if (renovatedCount >= 3) {
+                            gameState.basementDoorUnlocked = true;
+                            playSynthTone(150, 'sawtooth', 1.0, 0.3);
+                            pushLog("KRAAAK! De stalen koevoet breek het zware slot open. De weg is eindelijk vrij!");
+                            saveGame();
+                            endGame(true);
+                        } else {
+                            pushLog("Het slot is open, maar de vloek houdt de deur nog dicht! Voltooi eerst alle 3 de renovaties.", true);
+                        }
+                    } else {
+                        pushLog("De deur zit muurvast met zware stalen bouten. Je hebt de koevoet van de 2e verdieping nodig.", true);
+                    }
+                }
+            };
+            interactiveObjects.push(exitDoor);
+            mapColliders.push(new THREE.Box3().setFromObject(exitDoor));
+
+            // Renovatie-ankers plaatsen
+            if (!gameState.renovations.wall) {
+                createRenovationAnchor(0, 1.5, 4.5, 'wall', "Kapotte Muur Herstellen (Kost: 3 Hout)");
+            }
+            if (!gameState.renovations.window) {
+                createRenovationAnchor(9.8, 5.5, -4, 'window', "Gebroken Raam Vervangen (Kost: 2 Hout, 2 Metaal)");
+            }
+            if (!gameState.renovations.door) {
+                createRenovationAnchor(-4.8, 9.5, -12, 'door', "Vervallen Deur Herstellen (Kost: 2 Metaal, 2 Hout)");
+            }
+
+            buildLevelGates();
+        }
+
+        function createRenovationAnchor(x, y, z, type, label) {
+            const geo = new THREE.BoxGeometry(0.6, 1.8, 0.6);
+            const mat = new THREE.MeshStandardMaterial({ color: 0xffaa00, transparent: true, opacity: 0.3, emissive: 0xffaa00, emissiveIntensity: 0.2 });
+            const anchor = new THREE.Mesh(geo, mat);
+            anchor.position.set(x, y, z);
+            scene.add(anchor);
+
+            const anchorId = `anchor_${type}`;
+            anchor.name = anchorId;
+
+            anchor.userData = {
+                interactive: true,
+                name: label,
+                interact: function() {
+                    attemptRenovation(type, anchor);
+                }
+            };
+            interactiveObjects.push(anchor);
+        }
+
+        function removeAnchorById(anchorId) {
+            const anchor = scene.getObjectByName(anchorId);
+            if (anchor) {
+                scene.remove(anchor);
+                interactiveObjects = interactiveObjects.filter(o => o !== anchor);
+            }
+        }
+
+        function attemptRenovation(type, anchorMesh) {
+            let woodCost = 0;
+            let metalCost = 0;
+
+            if (type === 'wall') woodCost = 3;
+            else if (type === 'window') { woodCost = 2; metalCost = 2; }
+            else if (type === 'door') { woodCost = 2; metalCost = 2; }
+
+            if (gameState.inventory.wood >= woodCost && gameState.inventory.metal >= metalCost) {
+                gameState.inventory.wood -= woodCost;
+                gameState.inventory.metal -= metalCost;
+                gameState.renovations[type] = true;
+
+                playSynthTone(300, 'triangle', 0.5, 0.2);
+                pushLog("Succes! Je hebt de renovatie voltooid.");
+                
+                const anchorId = `anchor_${type}`;
+                removeAnchorById(anchorId);
+
+                applyMistDensity();
+                checkLevelUnlocks();
+
+                updateHUD();
+                saveGame();
+            } else {
+                pushLog(`Onvoldoende bouwmaterialen! Je hebt ${woodCost} Hout en ${metalCost} Metaal nodig.`, true);
+            }
+        }
+
+        function applyMistDensity() {
+            if (!scene) return;
+            const renovatedCount = Object.values(gameState.renovations).filter(v => v).length;
+            if (renovatedCount === 1) {
+                scene.fog.density = 0.05;
+                pushLog("De kille mist begint langzaam weg te trekken...");
+            } else if (renovatedCount === 2) {
+                scene.fog.density = 0.03;
+            } else if (renovatedCount === 3) {
+                scene.fog.density = 0.015;
+                pushLog("Het huis voelt een stuk warmer! De vloek lijkt opgeheven.");
+            }
+        }
+
+        // --- ENGE POP (WEEPING ANGEL IN MISTKAMER, Y = 12) ---
+        function buildDoll() {
+            const dollGroup = new THREE.Group();
+
+            const bodyGeo = new THREE.ConeGeometry(0.3, 0.8, 8);
+            const bodyMat = new THREE.MeshStandardMaterial({ color: 0x4a1212, roughness: 1 });
+            const body = new THREE.Mesh(bodyGeo, bodyMat);
+            body.position.y = 0.4;
+            dollGroup.add(body);
+
+            const headGeo = new THREE.SphereGeometry(0.22, 16, 16);
+            const headMat = new THREE.MeshStandardMaterial({ color: 0xe0e0e0, roughness: 0.9 });
+            const head = new THREE.Mesh(headGeo, headMat);
+            head.position.y = 0.9;
+            dollGroup.add(head);
+
+            const eyeGeo = new THREE.SphereGeometry(0.03, 8, 8);
+            const eyeMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+            const leftEye = new THREE.Mesh(eyeGeo, eyeMat);
+            leftEye.position.set(-0.07, 0.93, 0.18);
+            const rightEye = new THREE.Mesh(eyeGeo, eyeMat);
+            rightEye.position.set(0.07, 0.93, 0.18);
+            dollGroup.add(leftEye);
+            dollGroup.add(rightEye);
+
+            dollGroup.position.set(0, 12, -15);
+            scene.add(dollGroup);
+            dollMesh = dollGroup;
+        }
+
+        function updateDoll(deltaTime) {
+            if (!dollMesh || isPaused) return;
+
+            const playerPos = camera.position;
+            const inMistRoom = playerPos.y >= 12 && playerPos.y <= 16 &&
+                               playerPos.x >= mistRoomBounds.minX && playerPos.x <= mistRoomBounds.maxX &&
+                               playerPos.z >= mistRoomBounds.minZ && playerPos.z <= mistRoomBounds.maxZ;
+
+            if (inMistRoom) {
+                dollActive = true;
+                
+                const toPlayer = playerPos.clone().sub(dollMesh.position);
+                toPlayer.y = 0; 
+                const distance = toPlayer.length();
+
+                dollMesh.lookAt(playerPos.x, dollMesh.position.y, playerPos.z);
+
+                const lookDirection = new THREE.Vector3();
+                camera.getWorldDirection(lookDirection);
+                lookDirection.y = 0;
+                lookDirection.normalize();
+
+                const toDollDir = dollMesh.position.clone().sub(playerPos).normalize();
+                toDollDir.y = 0;
+
+                const dot = lookDirection.dot(toDollDir);
+                const isLookingAtDoll = dot > 0.65;
+
+                // Sluipmodus bescherming: Pop kan je niet zien of aanvallen als je sluipt!
+                if (gameState.isSneaking) {
+                    const startPos = new THREE.Vector3(0, 12, -15);
+                    const toStart = startPos.clone().sub(dollMesh.position);
+                    if (toStart.length() > 0.1) {
+                        dollMesh.position.add(toStart.normalize().multiplyScalar(0.8 * deltaTime));
+                    }
+                    return;
+                }
+
+                if (!isLookingAtDoll) {
+                    const speed = 2.2;
+                    if (distance > 0.1) {
+                        dollMesh.position.add(toPlayer.normalize().multiplyScalar(speed * deltaTime));
+                    }
+                    dollMesh.position.y = 12; 
+                    
+                    dollSpookyTimer += deltaTime;
+                    if (dollSpookyTimer > 1.5) {
+                        playSpookyWhisper();
+                        dollSpookyTimer = 0;
+                    }
+                }
+
+                if (distance < 1.4) {
+                    playSynthTone(100, 'sawtooth', 0.8, 0.3);
+                    pushLog("De ijzingwekkende pop grijpt je koude hand! Je raakt in paniek en rent het huis uit...", true);
+                    
+                    camera.position.set(0, 1.6, 22); 
+                    dollMesh.position.set(0, 12, -15); 
+                    
+                    gameState.survival.energy = Math.max(20, gameState.survival.energy - 30);
+                    updateHUD();
+                }
+            } else {
+                dollActive = false;
+                const startPos = new THREE.Vector3(0, 12, -15);
+                const toStart = startPos.clone().sub(dollMesh.position);
+                if (toStart.length() > 0.1) {
+                    dollMesh.position.add(toStart.normalize().multiplyScalar(1.0 * deltaTime));
+                }
+            }
+        }
+
+        // --- SLAAP & TENT MECHANICS ---
+        function enterTent() {
+            gameState.insideTent = true;
+            camera.position.set(6, 0.8, 16); 
+            pushLog("Je kruipt je veilige tent binnen. Je energie en conditie herstellen hier razendsnel.");
+            playSynthTone(150, 'sine', 0.5, 0.1);
+            saveGame();
+        }
+
+        function exitTent() {
+            gameState.insideTent = false;
+            moveForward = false;
+            moveBackward = false;
+            moveLeft = false;
+            moveRight = false;
+            velocity.set(0, 0, 0);
+            
+            camera.position.set(6, 1.6, 21.5); 
+            pushLog("Je kruipt de tent weer uit, de koude nacht in.");
+            playSynthTone(200, 'sine', 0.3, 0.05);
+            saveGame();
+        }
+
+        // --- ANTIEK DEURSLOT ---
+        function openDoorPuzzle() {
+            const ui = document.getElementById("door-puzzle-ui");
+            const clueEl = document.getElementById("mp-key-clue");
+            
+            if (clueEl && gameState.doorCode) {
+                clueEl.textContent = `Dial 1 (${gameState.doorCode.dial1} uur) - Dial 2 (${gameState.doorCode.dial2} uur) - Dial 3 (${gameState.doorCode.dial3} uur)`;
+            }
+
+            ui.classList.remove("hidden");
+            isPaused = true;
+            document.exitPointerLock();
+            renderLockDials();
+        }
+
+        function closeDoorPuzzle() {
+            const ui = document.getElementById("door-puzzle-ui");
+            ui.classList.add("hidden");
+            isPaused = false;
+            document.getElementById("canvas-container").requestPointerLock();
+        }
+
+        function rotateDial(dialNum, direction) {
+            playSynthTone(300 + (dialNum * 50), 'sine', 0.05, 0.1);
+            if (dialNum === 1) {
+                lockDials.dial1 = ((lockDials.dial1 + direction - 1 + 12) % 12) + 1;
+            } else if (dialNum === 2) {
+                lockDials.dial2 = ((lockDials.dial2 + direction - 1 + 12) % 12) + 1;
+            } else if (dialNum === 3) {
+                lockDials.dial3 = ((lockDials.dial3 + direction - 1 + 12) % 12) + 1;
+            }
+            renderLockDials();
+        }
+
+        function renderLockDials() {
+            document.getElementById("dial-val-1").textContent = lockDials.dial1;
+            document.getElementById("dial-val-2").textContent = lockDials.dial2;
+            document.getElementById("dial-val-3").textContent = lockDials.dial3;
+        }
+
+        function checkDoorLockPuzzle() {
+            if (lockDials.dial1 === gameState.doorCode.dial1 && 
+                lockDials.dial2 === gameState.doorCode.dial2 && 
+                lockDials.dial3 === gameState.doorCode.dial3) {
+                
+                playSynthTone(523, 'sine', 0.5, 0.2); 
+                setTimeout(() => playSynthTone(659, 'sine', 0.5, 0.2), 150); 
+                
+                gameState.frontDoorUnlocked = true;
+                pushLog("KRAAAK! Het antieke slot klikt open. De voordeur schuift open!");
+                
+                unlockFrontDoorMesh();
+
+                document.getElementById("door-puzzle-ui").classList.add("hidden");
+                isPaused = false;
+                document.getElementById("canvas-container").requestPointerLock();
+                
+                saveGame();
+            } else {
+                playSynthTone(150, 'sawtooth', 0.3, 0.2); 
+                pushLog("Het slot zit muurvast. Probeer een andere combinatie...", true);
+            }
+        }
+
+        function unlockFrontDoorMesh() {
+            if (doorMeshObj) {
+                doorMeshObj.position.y = -5;
+            }
+            if (doorMeshObj && doorMeshObj.userData.collider) {
+                mapColliders = mapColliders.filter(c => c !== doorMeshObj.userData.collider);
+            }
+        }
+
+        // --- POINTER LOCK & FALLBACK CONTROLS ---
+        function setupPointerLock() {
+            const overlay = document.getElementById("lock-overlay");
+            const container = document.getElementById("canvas-container");
+            const ui = document.getElementById("inventory-ui");
+            const doorUi = document.getElementById("door-puzzle-ui");
+            const movesUi = document.getElementById("moves-modal");
+            const letterUi = document.getElementById("letter-modal");
+            const statusText = document.getElementById("pause-status-text");
+
+            container.addEventListener('click', () => {
+                if (ui.classList.contains("hidden") && doorUi.classList.contains("hidden") && movesUi.classList.contains("hidden") && letterUi.classList.contains("hidden") && !gameState.introActive) {
+                    container.requestPointerLock();
+                }
+            });
+
+            overlay.addEventListener('click', () => {
+                if (ui.classList.contains("hidden") && doorUi.classList.contains("hidden") && movesUi.classList.contains("hidden") && letterUi.classList.contains("hidden") && !gameState.introActive) {
+                    container.requestPointerLock();
+                }
+            });
+
+            document.addEventListener('pointerlockchange', () => {
+                if (document.pointerLockElement === container) {
+                    overlay.classList.add("hidden");
+                    if (ui.classList.contains("hidden") && doorUi.classList.contains("hidden") && movesUi.classList.contains("hidden") && letterUi.classList.contains("hidden") && !gameState.introActive) {
+                        isPaused = false;
+                    }
+                    fallbackActive = false; 
+                    initAudio();
+                } else {
+                    if (!fallbackActive && gameStarted && !gameState.introActive) {
+                        overlay.classList.remove("hidden");
+                        isPaused = true;
+                        if (!ui.classList.contains("hidden")) {
+                            statusText.textContent = "Overleving Menu Open";
+                        } else if (!doorUi.classList.contains("hidden")) {
+                            statusText.textContent = "Slothandeling Actief";
+                        } else if (!movesUi.classList.contains("hidden")) {
+                            statusText.textContent = "Moves Menu Open";
+                        } else if (!letterUi.classList.contains("hidden")) {
+                            statusText.textContent = "Brief Open";
+                        } else {
+                            statusText.textContent = "Spel Gepauzeerd";
+                        }
+                    }
+                }
+            });
+
+            document.addEventListener('pointerlockerror', () => {
+                console.warn("Pointer Lock error.");
+                if (!fallbackActive && gameStarted && !gameState.introActive) {
+                    fallbackActive = true;
+                    isPaused = false;
+                    overlay.classList.add("hidden");
+                    pushLog("Sleepbesturing actief!", true);
+                    initAudio();
+                }
+            });
+
+            container.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                previousMousePosition = { x: e.clientX, y: e.clientY };
+            });
+
+            window.addEventListener('mouseup', () => {
+                isDragging = false;
+            });
+
+            window.addEventListener('mousemove', (event) => {
+                if (isPaused || gameState.introActive) return;
+
+                if (document.pointerLockElement === container) {
+                    const movementX = event.movementX || 0;
+                    const movementY = event.movementY || 0;
+
+                    euler.y -= movementX * 0.002;
+                    euler.x -= movementY * 0.002;
+
+                    euler.x = Math.max(-Math.PI / 2.3, Math.min(Math.PI / 2.3, euler.x));
+                    camera.quaternion.setFromEuler(euler);
+                }
+                else if (fallbackActive && isDragging) {
+                    const deltaX = event.clientX - previousMousePosition.x;
+                    const deltaY = event.clientY - previousMousePosition.y;
+
+                    euler.y -= deltaX * 0.003;
+                    euler.x -= deltaY * 0.003;
+
+                    euler.x = Math.max(-Math.PI / 2.3, Math.min(Math.PI / 2.3, euler.x));
+                    camera.quaternion.setFromEuler(euler);
+
+                    previousMousePosition = { x: event.clientX, y: event.clientY };
+                }
+            });
+        }
+
+        window.startFallbackMode = function(event) {
+            if (event) event.stopPropagation(); 
+            isPaused = false;
+            fallbackActive = true;
+            document.getElementById("lock-overlay").classList.add("hidden");
+            pushLog("Sleepbesturing actief! Klik en sleep de muis om rond te kijken.");
+            initAudio();
+        };
+
+        // --- CONTROLS EN COLLISION ---
+        function setupKeyboardControls() {
+            const onKeyDown = (event) => {
+                if (gameState.insideTent) {
+                    if (event.code === 'KeyE') {
+                        exitTent();
+                    }
+                    return;
+                }
+
+                if (event.code === 'KeyH') {
+                    toggleMovesModal();
+                    return;
+                }
+
+                if (isPaused || gameState.introActive) return;
+
+                switch (event.code) {
+                    // Bewegingstoetsen (ZQSD en Pijltjes) - Optimaal voor AZERTY én Pijltjes
+                    case 'KeyZ': 
+                    case 'ArrowUp':
+                        moveForward = true;
+                        break;
+                    case 'KeyQ': 
+                    case 'ArrowLeft':
+                        moveLeft = true;
+                        break;
+                    case 'KeyS': 
+                    case 'ArrowDown':
+                        moveBackward = true;
+                        break;
+                    case 'KeyD': 
+                    case 'ArrowRight':
+                        moveRight = true;
+                        break;
+
+                    // --- SPRINT TOETS (Shift) ---
+                    case 'ShiftLeft':
+                    case 'ShiftRight':
+                        shiftPressed = true;
+                        break;
+                    
+                    // --- GRIP & INTERACTIE (E) ---
+                    case 'KeyE': 
+                        combatAnims.rightPunch = 1.0; 
+                        playSynthTone(240, 'sine', 0.1, 0.05); 
+                        triggerInteraction(); 
+                        break;
+                    
+                    // --- GEVECHTSMOVES ---
+                    case 'KeyR': // Slaan met linkerhand
+                        combatAnims.leftPunch = 1.0;
+                        playSynthTone(220, 'triangle', 0.15, 0.08);
+                        pushLog("*ZWAAL* Je deelt een linkerhoek uit!");
+                        break;
+                    case 'KeyW': // Schoppen met linkerbeen
+                        combatAnims.leftKick = 1.0;
+                        playSynthTone(150, 'sawtooth', 0.25, 0.1);
+                        pushLog("*TRAAAK* Je schopt met je linkerbeen!");
+                        break;
+                    case 'KeyX': // Schoppen met rechterbeen
+                        combatAnims.rightKick = 1.0;
+                        playSynthTone(140, 'sawtooth', 0.25, 0.1);
+                        pushLog("*BOEM* Je schopt met je rechterbeen!");
+                        break;
+                    case 'KeyC': // Sluipen & opstaan
+                        toggleSneak();
+                        break;
+
+                    case 'KeyF':
+                        toggleFlashlight();
+                        break;
+                    case 'Space':
+                        event.preventDefault();
+                        if (canJump && !gameState.insideTent && !gameState.isSneaking) {
+                            velocity.y = 6.5;
+                            canJump = false;
+                            playSynthTone(180, 'triangle', 0.15, 0.05);
+                        }
+                        break;
+                }
+            };
+
+            const onKeyUp = (event) => {
+                switch (event.code) {
+                    case 'KeyZ':
+                    case 'ArrowUp':
+                        moveForward = false;
+                        break;
+                    case 'KeyQ':
+                    case 'ArrowLeft':
+                        moveLeft = false;
+                        break;
+                    case 'KeyS':
+                    case 'ArrowDown':
+                        moveBackward = false;
+                        break;
+                    case 'KeyD':
+                    case 'ArrowRight':
+                        moveRight = false;
+                        break;
+                    
+                    // --- SPRINT RELEASEN ---
+                    case 'ShiftLeft':
+                    case 'ShiftRight':
+                        shiftPressed = false;
+                        break;
+                }
+            };
+
+            document.addEventListener('keydown', onKeyDown);
+            document.addEventListener('keyup', onKeyUp);
+        }
+
+        // Veilige en soepele kruip-en-sta-beveiliging om vallen door de vloer te verhinderen
+        function toggleSneak() {
+            if (gameState.insideTent) return;
+            const badge = document.getElementById("hud-sneak-badge");
+
+            if (gameState.isSneaking) {
+                // Opstaan: verhoog direct de camerahoogte met de delta (0.7m) zodat de voeten op exact hetzelfde vloerniveau blijven!
+                camera.position.y += 0.7;
+                gameState.isSneaking = false;
+                badge.classList.add("hidden");
+                PLAYER_SPEED = 6.0; 
+                pushLog("Je staat weer rechtop.");
+                playSynthTone(150, 'sine', 0.2, 0.05);
+            } else {
+                // Kruipen: verlaag de camerahoogte direct met de delta (0.7m)
+                camera.position.y -= 0.7;
+                gameState.isSneaking = true;
+                badge.classList.remove("hidden");
+                PLAYER_SPEED = 3.0; 
+                pushLog("Je sluipt nu geruisloos door het donker. De pop kan je niet waarnemen!");
+                playSynthTone(100, 'sine', 0.3, 0.05);
+            }
+        }
+
+        function toggleFlashlight() {
+            if (gameState.flashlightBattery <= 0) return;
+            gameState.flashlightOn = !gameState.flashlightOn;
+            flashlightLight.intensity = gameState.flashlightOn ? 8 : 0;
+            playSynthTone(800, 'sine', 0.05, 0.05);
+        }
+
+        function getGroundY(position) {
+            if (gameState.insideTent) return 0;
+            let highestGround = 0;
+            const currentOffset = gameState.isSneaking ? 0.9 : 1.6;
+            const playerFeetY = position.y - currentOffset;
+            
+            for (let i = 0; i < mapColliders.length; i++) {
+                const collider = mapColliders[i];
+                const xzOverlap = (position.x + COLLISION_RADIUS * 0.6 > collider.min.x && position.x - COLLISION_RADIUS * 0.6 < collider.max.x) &&
+                                  (position.z + COLLISION_RADIUS * 0.6 > collider.min.z && position.z - COLLISION_RADIUS * 0.6 < collider.max.z);
+                
+                if (xzOverlap) {
+                    // Extra ruime veiligheidsmarge (0.8m) om ervoor te zorgen dat we tijdens de kruip-sta transitie de grond nooit kwijtraken
+                    if (playerFeetY >= collider.max.y - 0.8) {
+                        if (collider.max.y > highestGround) {
+                            highestGround = collider.max.y;
+                        }
+                    }
+                }
+            }
+            return highestGround;
+        }
+
+        function checkCollisions(desiredPosition) {
+            const playerFeetY = desiredPosition.y - (gameState.isSneaking ? 0.9 : 1.6);
+            const playerBox = new THREE.Box3(
+                new THREE.Vector3(desiredPosition.x - COLLISION_RADIUS, playerFeetY + 0.35, desiredPosition.z - COLLISION_RADIUS),
+                new THREE.Vector3(desiredPosition.x + COLLISION_RADIUS, desiredPosition.y + 0.2, desiredPosition.z + COLLISION_RADIUS)
+            );
+
+            if (desiredPosition.x < -39 || desiredPosition.x > 39 || desiredPosition.z < -39 || desiredPosition.z > 39) {
+                return true;
+            }
+
+            for (let i = 0; i < mapColliders.length; i++) {
+                const collider = mapColliders[i];
+                if (playerFeetY >= collider.max.y - 0.05) {
+                    continue;
+                }
+                if (playerBox.intersectsBox(collider)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function updateRaycasting() {
+            if (isPaused || gameState.introActive) return;
+
+            raycaster.setFromCamera(mouse, camera);
+            raycaster.far = 4;
+
+            const intersects = raycaster.intersectObjects(interactiveObjects, true);
+            const prompt = document.getElementById("action-prompt");
+            const textEl = document.getElementById("action-text");
+            const crosshair = document.getElementById("crosshair");
+
+            if (intersects.length > 0) {
+                const hitObj = intersects[0].object;
+                let target = hitObj;
+                while (target && !target.userData.interactive) {
+                    target = target.parent;
+                }
+                if (target && target.userData.interactive) {
+                    currentlyLookingAt = target;
+                    textEl.textContent = target.userData.name;
+                    prompt.style.opacity = "1";
+                    prompt.style.transform = "translateY(0)";
+                    crosshair.classList.add("active");
+                    return;
+                }
+            }
+
+            currentlyLookingAt = null;
+            prompt.style.opacity = "0";
+            prompt.style.transform = "translateY(16px)";
+            crosshair.classList.remove("active");
+        }
+
+        function triggerInteraction() {
+            if (currentlyLookingAt && currentlyLookingAt.userData.interact) {
+                currentlyLookingAt.userData.interact();
+            }
+        }
+
+        // --- CAMERA LANDING TRIGGER ---
+        function endIntroAndLand() {
+            gameState.introActive = false;
+            document.getElementById("intro-cinematic-overlay").classList.add("hidden");
+            document.getElementById("game-hud").classList.remove("opacity-0");
+            document.getElementById("hud-player-name").textContent = gameState.playerName;
+
+            camera.position.set(0, 1.6, 22);
+            euler.set(0, 0, 0);
+            camera.quaternion.setFromEuler(euler);
+
+            pushLog("Level 1 gestart! Doorzoek de buitenplaats naar de sleutel.");
+            saveGame();
+
+            document.getElementById("canvas-container").requestPointerLock();
+        }
+
+        function endGame(won) {
+            isPaused = true;
+            document.exitPointerLock();
+            
+            const screen = document.getElementById("end-screen");
+            const title = document.getElementById("end-title");
+            const message = document.getElementById("end-message");
+            const card = document.getElementById("end-card");
+
+            screen.classList.remove("hidden");
+
+            if (won) {
+                title.textContent = "GEONTSNAPT!";
+                title.className = "font-horror text-7xl mb-4 tracking-wider text-green-500 animate-bounce";
+                message.textContent = `Gefeliciteerd, ${gameState.playerName}! Met behulp van de stalen koevoet heb je de nooduitgang op zolder geopend en de vloek van het Victoriaanse landhuis voorgoed verbroken. Je bent vrij!`;
+                card.className = "max-w-xl border-2 p-10 bg-stone-900/90 rounded-2xl shadow-2xl backdrop-blur-md border-green-900";
+                localStorage.removeItem(SAVE_KEY);
+            } else {
+                title.textContent = "GAME OVER";
+                title.className = "font-horror text-7xl mb-4 tracking-wider text-red-600";
+                message.textContent = `De extreme kou, honger of pure paniek werd je te veel, ${gameState.playerName}. Het huis heeft een nieuwe bewoner toegevoegd aan haar eeuwenoude collectie...`;
+                card.className = "max-w-xl border-2 p-10 bg-stone-900/90 rounded-2xl shadow-2xl backdrop-blur-md border-red-900";
+            }
+        }
+
+        // --- HOOFDLUS ---
+        let lastPositionSyncTime = 0;
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (gameState.introActive && gameStarted) {
+                const time = clock.getElapsedTime() * 0.15;
+                camera.position.x = Math.sin(time) * 36;
+                camera.position.z = -7.5 + Math.cos(time) * 36;
+                camera.position.y = Math.max(3.0, 12 + Math.sin(time * 0.4) * 4); 
+                camera.lookAt(0, 10, -7.5);
+                renderer.render(scene, camera);
+                return;
+            }
+
+            if (isPaused) {
+                renderer.render(scene, camera);
+                return;
+            }
+
+            if (document.pointerLockElement !== document.getElementById("canvas-container") && !fallbackActive && gameStarted && !gameState.introActive) {
+                document.getElementById("lock-overlay").classList.remove("hidden");
+                isPaused = true;
+                renderer.render(scene, camera);
+                return;
+            }
+
+            const deltaTime = clock.getDelta();
+
+            // Animeren van de 3D armen en benen
+            if (firstPersonGroup) {
+                Object.keys(combatAnims).forEach(key => {
+                    if (combatAnims[key] > 0) {
+                        combatAnims[key] = Math.max(0, combatAnims[key] - deltaTime * 4.0);
+                    }
+                });
+
+                // Linkerarm punch
+                const lpProgress = Math.sin(combatAnims.leftPunch * Math.PI);
+                fpLeftArm.position.z = -0.35 - (lpProgress * 0.6);
+                fpLeftArm.position.y = -0.28 + (lpProgress * 0.1);
+                fpLeftArm.rotation.x = -lpProgress * 0.4;
+
+                // Rechterarm punch / Interactie (reikt soepel naar voren)
+                const rpProgress = Math.sin(combatAnims.rightPunch * Math.PI);
+                fpRightArm.position.z = -0.35 - (rpProgress * 0.65); 
+                fpRightArm.position.y = -0.25 + (rpProgress * 0.15);
+                fpRightArm.rotation.x = -rpProgress * 0.45;
+
+                // Kicks
+                const lkProgress = Math.sin(combatAnims.leftKick * Math.PI);
+                fpLeftLeg.position.z = -0.1 - (lkProgress * 0.8);
+                fpLeftLeg.position.y = -0.6 + (lkProgress * 0.45);
+                fpLeftLeg.rotation.x = 0.2 - (lkProgress * 1.2);
+
+                const rkProgress = Math.sin(combatAnims.rightKick * Math.PI);
+                fpRightLeg.position.z = -0.1 - (rkProgress * 0.8);
+                fpRightLeg.position.y = -0.6 + (rkProgress * 0.45);
+                fpRightLeg.rotation.x = 0.2 - (rkProgress * 1.2);
+
+                // Lichte ademhaling/beweeg bobbing
+                const walking = (moveForward || moveBackward || moveLeft || moveRight);
+                if (walking && canJump) {
+                    const bob = Math.sin(clock.getElapsedTime() * 10) * 0.02;
+                    firstPersonGroup.position.y = bob;
+                } else {
+                    firstPersonGroup.position.y = 0;
+                }
+            }
+
+            velocity.x -= velocity.x * 10.0 * deltaTime;
+            velocity.z -= velocity.z * 10.0 * deltaTime;
+
+            if (!gameState.insideTent) {
+                velocity.y -= 18.0 * deltaTime; 
+            } else {
+                velocity.y = 0;
+            }
+
+            // --- SPRINT & CONDITIE LOGICA ---
+            const isMoving = (moveForward || moveBackward || moveLeft || moveRight);
+            
+            // Je kunt alleen sprinten als je loopt, conditie hebt, niet sluipt en niet in de tent zit
+            const isSprinting = shiftPressed && isMoving && gameState.survival.stamina > 0 && !gameState.isSneaking && !gameState.insideTent;
+
+            if (isSprinting) {
+                // Conditie loopt leeg in exact 15 seconden (100 / 15 = ~6.67 per seconde)
+                gameState.survival.stamina = Math.max(0, gameState.survival.stamina - (100 / 15) * deltaTime);
+                PLAYER_SPEED = 10.0; // Verhoogde snelheid tijdens het sprinten
+            } else {
+                // --- SNELLER STAMINA HERSTEL TIJDENS SLAAP / IN TENT ---
+                // Conditie laadt op als je niet sprint. Binnen in de tent gaat dit met 60% per seconde (6x sneller) in plaats van 10%
+                const rechargeMultiplier = gameState.insideTent ? 60.0 : 10.0;
+                gameState.survival.stamina = Math.min(100, gameState.survival.stamina + rechargeMultiplier * deltaTime);
+                PLAYER_SPEED = gameState.isSneaking ? 3.0 : 6.0; // Normale of sluipsnelheid
+            }
+
+            if (gameState.insideTent) {
+                moveForward = moveBackward = moveLeft = moveRight = false;
+                velocity.set(0, 0, 0);
+            } else {
+                if (moveForward) velocity.z = -PLAYER_SPEED;
+                if (moveBackward) velocity.z = PLAYER_SPEED;
+                if (moveLeft) velocity.x = -PLAYER_SPEED;
+                if (moveRight) velocity.x = PLAYER_SPEED;
+            }
+
+            const forward = new THREE.Vector3(0, 0, -1);
+            forward.applyEuler(new THREE.Euler(0, euler.y, 0, 'YXZ'));
+            forward.normalize();
+            
+            const right = new THREE.Vector3(1, 0, 0);
+            right.applyEuler(new THREE.Euler(0, euler.y, 0, 'YXZ'));
+            right.normalize();
+
+            const moveStepForward = forward.clone().multiplyScalar(-velocity.z * deltaTime);
+            const moveStepRight = right.clone().multiplyScalar(velocity.x * deltaTime);
+
+            const stepX = camera.position.clone();
+            stepX.x += moveStepForward.x + moveStepRight.x;
+            if (!checkCollisions(stepX)) {
+                camera.position.x = stepX.x;
+            }
+
+            const stepZ = camera.position.clone();
+            stepZ.z += moveStepForward.z + moveStepRight.z;
+            if (!checkCollisions(stepZ)) {
+                camera.position.z = stepZ.z;
+            }
+
+            camera.position.y += velocity.y * deltaTime;
+
+            const groundHeight = getGroundY(camera.position);
+            const targetHeightOffset = gameState.insideTent ? 0.8 : (gameState.isSneaking ? 0.9 : 1.6);
+            const targetCameraY = groundHeight + targetHeightOffset;
+
+            if (camera.position.y <= targetCameraY) {
+                camera.position.y = targetCameraY;
+                velocity.y = 0;
+                canJump = true;
+            }
+
+            // Krakende loopgeluiden - Voetstappen klinken sneller tijdens het sprinten (0.28s i.p.v. 0.45s)
+            const stepInterval = isSprinting ? 0.28 : 0.45;
+            if (!gameState.insideTent && canJump && isMoving && clock.getElapsedTime() - lastStepTime > stepInterval) {
+                playSynthTone(80 + Math.random() * 30, 'sawtooth', 0.12, 0.02);
+                lastStepTime = clock.getElapsedTime();
+            }
+
+            // Survival afname over tijd
+            gameState.survival.hunger = Math.max(0, gameState.survival.hunger - (0.015 * deltaTime));
+            if (gameState.insideTent) {
+                gameState.survival.energy = Math.min(100, gameState.survival.energy + (8.0 * deltaTime));
+            } else if (isMoving) {
+                // Rennen kost meer energie dan normaal lopen
+                const energyCost = isSprinting ? 0.12 : 0.04;
+                gameState.survival.energy = Math.max(0, gameState.survival.energy - (energyCost * deltaTime));
+            } else {
+                gameState.survival.energy = Math.max(0, gameState.survival.energy - (0.01 * deltaTime));
+            }
+
+            if (gameState.flashlightOn) {
+                gameState.flashlightBattery = Math.max(0, gameState.flashlightBattery - (0.08 * deltaTime));
+                document.getElementById("bar-battery").style.width = `${gameState.flashlightBattery}%`;
+                document.getElementById("bar-battery-text").textContent = `${Math.round(gameState.flashlightBattery)}%`;
+                if (gameState.flashlightBattery <= 0) {
+                    toggleFlashlight();
+                }
+            }
+
+            if (flashlightLight) {
+                flashlightLight.position.copy(camera.position);
+                const forwardDirection = new THREE.Vector3(0, 0, -1);
+                forwardDirection.applyQuaternion(camera.quaternion);
+                flashlightLight.target.position.copy(camera.position).add(forwardDirection);
+            }
+
+            // Update andere spelers smoothly
+            Object.values(otherPlayers).forEach(p => {
+                if (p.mesh) {
+                    p.mesh.position.lerp(p.targetPos, 0.15);
+                    p.mesh.rotation.y = THREE.MathUtils.lerp(p.mesh.rotation.y, p.targetRotationY, 0.15);
+                }
+            });
+
+            if (isMultiplayer && db && firebaseUser) {
+                const now = clock.getElapsedTime();
+                if (now - lastPositionSyncTime > 0.1) {
+                    lastPositionSyncTime = now;
+                    syncPositionToCloud();
+                }
+            }
+
+            updateLocationState();
+            updateDoll(deltaTime);
+            updateRaycasting();
+            updateHUD();
+
+            renderer.render(scene, camera);
+        }
+
+        function updateLocationState() {
+            if (gameState.insideTent) {
+                document.getElementById("hud-location").textContent = "In de Tent";
+                gameState.currentRoomId = "tent";
+                return;
+            }
+
+            const p = camera.position;
+            let roomName = "Buitenplaats";
+            let roomId = "outside";
+
+            if (p.z <= 10 && p.z >= -25 && p.x >= -10 && p.x <= 10) {
+                const floor = Math.floor(p.y / 4);
+                if (floor === 0) {
+                    roomName = "Gelijkvloers - De Oude Hal";
+                    roomId = "hall";
+                } else if (floor === 1) {
+                    roomName = "1e Verdieping - De Werkplaats";
+                    roomId = "workshop";
+                } else if (floor === 2) {
+                    roomName = "2e Verdieping - De Bibliotheek";
+                    roomId = "library";
+                } else if (floor === 3) {
+                    roomName = "3e Verdieping - De Mistkamer (Gevaarlijk!)";
+                    roomId = "mistroom";
+                } else if (floor >= 4) {
+                    roomName = "4e Verdieping - Stoffige Zolder";
+                    roomId = "attic";
+                }
+            }
+
+            if (gameState.currentRoomId !== roomId) {
+                gameState.currentRoomId = roomId;
+                document.getElementById("hud-location").textContent = roomName;
+                pushLog(`Je betreedt: ${roomName}`);
+                saveGame();
+            }
+        }
+
+        function updateHUD() {
+            const barEnergy = document.getElementById("bar-energy");
+            const barEnergyText = document.getElementById("bar-energy-text");
+            const barHunger = document.getElementById("bar-hunger");
+            const barHungerText = document.getElementById("bar-hunger-text");
+            const barStamina = document.getElementById("bar-stamina");
+            const barStaminaText = document.getElementById("bar-stamina-text");
+
+            if (barEnergy) {
+                barEnergy.style.width = `${gameState.survival.energy}%`;
+                barEnergyText.textContent = `${Math.round(gameState.survival.energy)}%`;
+            }
+
+            if (barHunger) {
+                barHunger.style.width = `${gameState.survival.hunger}%`;
+                barHungerText.textContent = `${Math.round(gameState.survival.hunger)}%`;
+            }
+
+            if (barStamina) {
+                barStamina.style.width = `${gameState.survival.stamina}%`;
+                barStaminaText.textContent = `${Math.round(gameState.survival.stamina)}%`;
+            }
+
+            const lvlInd = document.getElementById("hud-level-indicator");
+            if (lvlInd) {
+                lvlInd.textContent = `Level ${gameState.currentLevel}`;
+            }
+
+            if (gameState.survival.hunger <= 0 || gameState.survival.energy <= 0) {
+                endGame(false);
+            }
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        // --- INVENTARIS EN CRAFTING UI HANDLERS ---
+        function toggleInventoryUI() {
+            const ui = document.getElementById("inventory-ui");
+            const container = document.getElementById("canvas-container");
+            const visible = !ui.classList.contains("hidden");
+            
+            if (visible) {
+                ui.classList.add("hidden");
+                isPaused = false;
+                if (!fallbackActive) container.requestPointerLock();
+            } else {
+                ui.classList.remove("hidden");
+                isPaused = true;
+                document.exitPointerLock();
+                renderInventoryData();
+            }
+        }
+
+        function renderInventoryData() {
+            const grid = document.getElementById("inv-grid");
+            grid.innerHTML = "";
+
+            const keyClue = gameState.doorCode ? ` Code in koper gekrast: ${gameState.doorCode.dial1}-${gameState.doorCode.dial2}-${gameState.doorCode.dial3}.` : '';
+
+            const items = [
+                { id: 'key', name: 'Huissleutel', count: gameState.outsideKeyCollected && !gameState.frontDoorUnlocked ? 1 : 0, icon: 'fa-key text-amber-500', desc: `Sleutel van de voordeur.${keyClue}` },
+                { id: 'wood', name: 'Houtblokken', count: gameState.inventory.wood, icon: 'fa-tree text-amber-600', desc: 'Opraapbare houtblokken of hout uit gesloopte kisten.' },
+                { id: 'metal', name: 'Oud Metaal', count: gameState.inventory.metal, icon: 'fa-cubes text-slate-400', desc: 'Gevonden schrootmetaal voor raam- en deurkozijnen.' },
+                { id: 'food', name: 'Rantsoen', count: gameState.inventory.food, icon: 'fa-apple-whole text-emerald-500', desc: 'Herstelt 40% honger.', action: eatFood },
+                { id: 'flashlight', name: 'Zaklamp', count: gameState.flashlightCollected ? 1 : 0, icon: 'fa-flashlight text-cyan-500', desc: 'Beschermt tegen het absolute duister.' },
+                { id: 'axe', name: 'Hakbijl', count: gameState.axeCollected ? 1 : 0, icon: 'fa-hammer text-red-700', desc: 'Slopen van barricades en houten kisten.' },
+                { id: 'crowbar', name: 'Koevoet', count: gameState.crowbarCollected ? 1 : 0, icon: 'fa-wrench text-slate-500', desc: 'Hiermee kan de zolder-nooduitgang geforceerd worden.' }
+            ];
+
+            items.forEach(item => {
+                if (item.count > 0) {
+                    const itemEl = document.createElement("div");
+                    itemEl.className = "p-2 bg-stone-950 border border-stone-850 hover:border-red-900 rounded-xl flex flex-col items-center justify-center text-center cursor-pointer transition-all";
+                    itemEl.innerHTML = `
+                        <i class="fa-solid ${item.icon} text-xl mb-1"></i>
+                        <span class="text-[10px] font-bold text-stone-300 block truncate w-full">${item.name}</span>
+                        <span class="text-[9px] bg-stone-800 text-stone-400 px-1.5 py-0.2 rounded-full mt-1">x${item.count}</span>
+                    `;
+                    itemEl.onclick = () => {
+                        let descHtml = `<strong>${item.name}</strong><br>${item.desc}`;
+                        if (item.action) {
+                            descHtml += `<button onclick="triggerItemAction('${item.id}')" class="w-full mt-2 bg-emerald-800 hover:bg-emerald-700 text-white text-[10px] py-1 rounded">Gebruiken</button>`;
+                        }
+                        document.getElementById("inv-desc").innerHTML = descHtml;
+                    };
+                    grid.appendChild(itemEl);
+                }
+            });
+
+            // Crafting opties
+            const craftList = document.getElementById("craft-list");
+            craftList.innerHTML = "";
+
+            const recipes = [
+                { name: "Houtplanken bewerken", cost: "1 Houtblok", canCraft: gameState.inventory.wood >= 1, craft: () => craftPlanks() },
+                { name: "Zaklampbatterij herladen", cost: "2 Metaal", canCraft: gameState.inventory.metal >= 2, craft: () => craftBattery() }
+            ];
+
+            recipes.forEach(recipe => {
+                const rEl = document.createElement("div");
+                rEl.className = "p-3 bg-stone-950/60 border border-stone-850 rounded-xl flex justify-between items-center gap-2";
+                rEl.innerHTML = `
+                    <div>
+                        <h4 class="text-xs font-bold text-stone-300">${recipe.name}</h4>
+                        <span class="text-[10px] text-stone-500">Kost: ${recipe.cost}</span>
+                    </div>
+                    <button ${recipe.canCraft ? '' : 'disabled'} onclick="triggerCraft('${recipe.name}')" class="px-3 py-1.5 rounded text-xs font-bold transition-all ${recipe.canCraft ? 'bg-red-800 hover:bg-red-700 text-white' : 'bg-stone-900 text-stone-600 cursor-not-allowed'}">
+                        Maken
+                    </button>
+                `;
+                craftList.appendChild(rEl);
+            });
+
+            // Renovatie status overzicht
+            const statusContainer = document.getElementById("renovation-status-list");
+            statusContainer.innerHTML = `
+                <div class="flex justify-between items-center text-xs">
+                    <span>Muur Gelijkvloers (Level 2)</span>
+                    <span class="${gameState.renovations.wall ? 'text-green-500 font-bold' : 'text-red-500'}">${gameState.renovations.wall ? 'Hersteld' : 'Niet hersteld'}</span>
+                </div>
+                <div class="flex justify-between items-center text-xs">
+                    <span>1e Verdieping Raam (Level 3)</span>
+                    <span class="${gameState.renovations.window ? 'text-green-500 font-bold' : 'text-red-500'}">${gameState.renovations.window ? 'Hersteld' : 'Niet hersteld'}</span>
+                </div>
+                <div class="flex justify-between items-center text-xs">
+                    <span>2e Verdieping Deur (Level 4)</span>
+                    <span class="${gameState.renovations.door ? 'text-green-500 font-bold' : 'text-red-500'}">${gameState.renovations.door ? 'Hersteld' : 'Niet hersteld'}</span>
+                </div>
+            `;
+        }
+
+        function eatFood() {
+            if (gameState.inventory.food > 0) {
+                gameState.inventory.food--;
+                gameState.survival.hunger = Math.min(100, gameState.survival.hunger + 40);
+                playSynthTone(350, 'sine', 0.2, 0.1);
+                pushLog("Je eet een voedselrantsoen en stilt je honger.");
+                renderInventoryData();
+                updateHUD();
+                saveGame();
+            }
+        }
+
+        window.triggerItemAction = function(itemId) {
+            if (itemId === 'food') eatFood();
+        };
+
+        window.triggerCraft = function(recipeName) {
+            if (recipeName.includes("Houtplanken")) {
+                gameState.inventory.wood -= 1;
+                gameState.inventory.wood += 2;
+                pushLog("Houtplanken verwerkt naar fijne materialen!");
+            } else if (recipeName.includes("batterij")) {
+                gameState.inventory.metal -= 2;
+                gameState.flashlightBattery = 100;
+                pushLog("Zaklampbatterijen volledig opgeladen via de werkbank!");
+            }
+            playSynthTone(400, 'triangle', 0.3, 0.15);
+            renderInventoryData();
+            saveGame();
+        };
+
+        // --- MULTIPLAYER ROOM CREATORS AND HANDLERS (Rule 1 & Rule 2 compliant) ---
+        async function createMultiplayerRoom() {
+            const inputName = document.getElementById("global-name-input").value.trim();
+            myPlayerName = inputName || "Speler_" + Math.floor(1000 + Math.random() * 9000);
+            gameState.playerName = myPlayerName;
+
+            initFirebaseConnection();
+            if (!db) {
+                pushLog("Cloudverbinding is niet actief in deze browser.", true);
+                return;
+            }
+
+            await authenticateFirebase();
+            if (!firebaseUser) {
+                pushLog("Authenticatie mislukt.", true);
+                return;
+            }
+
+            const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+            let roomId = "";
+            for (let i = 0; i < 4; i++) {
+                roomId += alphabet.charAt(Math.floor(Math.random() * alphabet.length));
+            }
+
+            const keys = ["mailbox", "bricks", "stump", "birdhouse"];
+            const randomKeyLoc = keys[Math.floor(Math.random() * keys.length)];
+
+            const randomDoorCode = {
+                dial1: Math.floor(Math.random() * 12) + 1,
+                dial2: Math.floor(Math.random() * 12) + 1,
+                dial3: Math.floor(Math.random() * 12) + 1
+            };
+
+            const sessionRef = db.collection('artifacts').doc(appId).collection('public').doc('data')
+                                 .collection('sessions').doc(roomId);
+
+            try {
+                await sessionRef.set({
+                    roomId: roomId,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    gameState: {
+                        playerName: myPlayerName,
+                        outsideKeyCollected: false,
+                        keyLocationId: randomKeyLoc,
+                        doorCode: randomDoorCode,
+                        frontDoorUnlocked: false,
+                        flashlightBattery: 100,
+                        axeCollected: true, 
+                        barricadeDestroyed: false,
+                        crowbarCollected: false,
+                        basementDoorUnlocked: false,
+                        currentLevel: 1,
+                        renovations: { wall: false, window: false, door: false }
+                    }
+                });
+
+                multiplayerRoomId = roomId;
+                isMultiplayer = true;
+
+                document.getElementById("mp-lobby-badge").classList.remove("hidden");
+                document.getElementById("mp-lobby-id").textContent = roomId;
+
+                pushLog(`Kamer ${roomId} succesvol gecreëerd! Deel deze code.`);
+                startGame(false);
+            } catch (err) {
+                console.error("Fout bij kamer aanmaken:", err);
+                pushLog("Database bewerking mislukt. Probeer offline mode.", true);
+            }
+        }
+
+        async function joinMultiplayerRoom() {
+            const codeInput = document.getElementById("mp-code-input").value.trim().toUpperCase();
+            const inputName = document.getElementById("global-name-input").value.trim();
+            myPlayerName = inputName || "Speler_" + Math.floor(1000 + Math.random() * 9000);
+            gameState.playerName = myPlayerName;
+
+            if (!codeInput || codeInput.length < 4) {
+                pushLog("Voer een geldige 4-letterige Kamercode in.", true);
+                return;
+            }
+
+            initFirebaseConnection();
+            if (!db) {
+                pushLog("Cloudverbinding is momenteel niet actief.", true);
+                return;
+            }
+
+            await authenticateFirebase();
+            if (!firebaseUser) {
+                pushLog("Authenticatie mislukt.", true);
+                return;
+            }
+
+            const sessionRef = db.collection('artifacts').doc(appId).collection('public').doc('data')
+                                 .collection('sessions').doc(codeInput);
+
+            try {
+                const snap = await sessionRef.get();
+                if (!snap.exists) {
+                    pushLog("Kamer niet gevonden! Controleer de code.", true);
+                    return;
+                }
+
+                multiplayerRoomId = codeInput;
+                isMultiplayer = true;
+
+                const data = snap.data();
+                if (data.gameState) {
+                    gameState = { ...gameState, ...data.gameState };
+                    gameState.playerName = myPlayerName;
+                }
+
+                document.getElementById("mp-lobby-badge").classList.remove("hidden");
+                document.getElementById("mp-lobby-id").textContent = codeInput;
+
+                pushLog(`Verbonden met Kamer ${codeInput}!`);
+                startGame(false);
+            } catch (err) {
+                console.error("Fout bij deelnemen:", err);
+                pushLog("Kon geen verbinding maken met de kamer.", true);
+            }
+        }
+
+        function syncPositionToCloud() {
+            if (!isMultiplayer || !db || !firebaseUser || !camera) return;
+
+            const playerRef = db.collection('artifacts').doc(appId).collection('public').doc('data')
+                                .collection('players').doc(`${multiplayerRoomId}_${myUserId}`);
+
+            playerRef.set({
+                roomId: multiplayerRoomId,
+                userId: myUserId,
+                name: myPlayerName,
+                x: camera.position.x,
+                y: camera.position.y,
+                z: camera.position.z,
+                ry: euler.y,
+                lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+        }
+
+        function syncLocalStateToCloud() {
+            if (!isMultiplayer || !db || !firebaseUser) return;
+            const sessionRef = db.collection('artifacts').doc(appId).collection('public').doc('data')
+                                 .collection('sessions').doc(multiplayerRoomId);
+
+            sessionRef.update({
+                gameState: {
+                    outsideKeyCollected: gameState.outsideKeyCollected,
+                    keyLocationId: gameState.keyLocationId,
+                    doorCode: gameState.doorCode,
+                    frontDoorUnlocked: gameState.frontDoorUnlocked,
+                    flashlightBattery: gameState.flashlightBattery,
+                    axeCollected: gameState.axeCollected,
+                    barricadeDestroyed: gameState.barricadeDestroyed,
+                    crowbarCollected: gameState.crowbarCollected,
+                    basementDoorUnlocked: gameState.basementDoorUnlocked,
+                    currentLevel: gameState.currentLevel,
+                    renovations: gameState.renovations
+                }
+            }).catch(err => console.error("Cloud update error:", err));
+        }
+
+        function listenToMultiplayerRoom() {
+            if (!isMultiplayer || !db || !firebaseUser) return;
+
+            db.collection('artifacts').doc(appId).collection('public').doc('data')
+              .collection('sessions').doc(multiplayerRoomId)
+              .onSnapshot(docSnap => {
+                  if (!docSnap.exists) return;
+                  const data = docSnap.data();
+                  if (data && data.gameState) {
+                      const prevWall = gameState.renovations.wall;
+                      const prevWindow = gameState.renovations.window;
+                      const prevDoor = gameState.renovations.door;
+                      const prevFrontDoor = gameState.frontDoorUnlocked;
+                      const prevKeyCollected = gameState.outsideKeyCollected;
+
+                      gameState.outsideKeyCollected = data.gameState.outsideKeyCollected;
+                      gameState.keyLocationId = data.gameState.keyLocationId || "mailbox";
+                      gameState.doorCode = data.gameState.doorCode || { dial1: 12, dial2: 3, dial3: 6 };
+                      gameState.frontDoorUnlocked = data.gameState.frontDoorUnlocked;
+                      gameState.axeCollected = data.gameState.axeCollected;
+                      gameState.barricadeDestroyed = data.gameState.barricadeDestroyed;
+                      gameState.crowbarCollected = data.gameState.crowbarCollected;
+                      gameState.basementDoorUnlocked = data.gameState.basementDoorUnlocked;
+                      gameState.currentLevel = Math.max(gameState.currentLevel, data.gameState.currentLevel);
+                      gameState.renovations = data.gameState.renovations;
+
+                      if (gameState.outsideKeyCollected && !prevKeyCollected) {
+                          pushLog("Een medespeler heeft de huissleutel gevonden!");
+                      }
+
+                      if (gameState.frontDoorUnlocked && !prevFrontDoor) {
+                          unlockFrontDoorMesh();
+                          pushLog("De voordeur is ontgrendeld door een medespeler!");
+                      }
+
+                      if (gameState.renovations.wall && !prevWall) {
+                          removeAnchorById('anchor_wall');
+                          applyMistDensity();
+                          checkLevelUnlocks();
+                          pushLog("Een medespeler heeft de Kapotte Muur hersteld!");
+                      }
+
+                      if (gameState.renovations.window && !prevWindow) {
+                          removeAnchorById('anchor_window');
+                          applyMistDensity();
+                          checkLevelUnlocks();
+                          pushLog("Een medespeler heeft het Gebroken Raam vervangen!");
+                      }
+
+                      if (gameState.renovations.door && !prevDoor) {
+                          removeAnchorById('anchor_door');
+                          applyMistDensity();
+                          checkLevelUnlocks();
+                          pushLog("Een medespeler heeft de Vervallen Deur hersteld!");
+                      }
+
+                      updateHUD();
+                  }
+              }, err => {
+                  console.warn("Fout bij luisteren naar room snapshot:", err);
+              });
+
+            db.collection('artifacts').doc(appId).collection('public').doc('data')
+              .collection('sessions').doc(multiplayerRoomId).collection('actions')
+              .onSnapshot(querySnap => {
+                  if (!querySnap) return;
+                  querySnap.forEach(doc => {
+                      const action = doc.data();
+                      if (action.type === 'destroy_crate') {
+                          removeCrateById(action.crateId);
+                      } else if (action.type === 'collect_item') {
+                          removeItemById(action.itemId);
+                      }
+                  });
+              }, err => {
+                  console.warn("Fout bij acties:", err);
+              });
+
+            db.collection('artifacts').doc(appId).collection('public').doc('data')
+              .collection('players')
+              .onSnapshot(querySnap => {
+                  if (!querySnap) return;
+                  
+                  querySnap.forEach(doc => {
+                      const pData = doc.data();
+                      if (pData.roomId === multiplayerRoomId && pData.userId !== myUserId) {
+                          updateOtherPlayerPosition(pData);
+                      }
+                  });
+              }, err => {
+                  console.warn("Spelers synchronisatie fout:", err);
+              });
+        }
+
+        function updateOtherPlayerPosition(pData) {
+            const id = pData.userId;
+            
+            if (!otherPlayers[id]) {
+                const group = new THREE.Group();
+
+                const headGeo = new THREE.SphereGeometry(0.35, 16, 16);
+                const headMat = new THREE.MeshStandardMaterial({ 
+                    color: 0x00ffcc, 
+                    emissive: 0x00ffcc, 
+                    emissiveIntensity: 0.8,
+                    transparent: true,
+                    opacity: 0.7 
+                });
+                const head = new THREE.Mesh(headGeo, headMat);
+                head.position.y = 1.0;
+                group.add(head);
+
+                const bodyGeo = new THREE.ConeGeometry(0.3, 0.9, 8);
+                const bodyMat = new THREE.MeshStandardMaterial({ 
+                    color: 0x00aa88, 
+                    transparent: true, 
+                    opacity: 0.4,
+                    wireframe: true 
+                });
+                const body = new THREE.Mesh(bodyGeo, bodyMat);
+                body.position.y = 0.45;
+                group.add(body);
+
+                const light = new THREE.PointLight(0x00ffcc, 0.8, 4);
+                light.position.set(0, 1.0, 0);
+                group.add(light);
+
+                scene.add(group);
+
+                otherPlayers[id] = {
+                    mesh: group,
+                    targetPos: new THREE.Vector3(pData.x, pData.y, pData.z),
+                    targetRotationY: pData.ry
+                };
+
+                pushLog(`👻 ${pData.name} betreedt het verlaten huis!`);
+            } else {
+                otherPlayers[id].targetPos.set(pData.x, pData.y - 0.6, pData.z); 
+                otherPlayers[id].targetRotationY = pData.ry;
+            }
+        }
+
+        // --- DRIE DIMENSIONALE INITIALISATIE ---
+        function init3DWorld() {
+            clock = new THREE.Clock();
+
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x0a0505);
+            
+            const renovatedCount = Object.values(gameState.renovations).filter(v => v).length;
+            const startFogDensity = renovatedCount === 3 ? 0.015 : renovatedCount === 2 ? 0.03 : renovatedCount === 1 ? 0.05 : 0.07;
+            scene.fog = new THREE.FogExp2(0x0a0505, startFogDensity);
+
+            camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 100);
+            
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            
+            const container = document.getElementById("canvas-container");
+            container.innerHTML = "";
+            container.appendChild(renderer.domElement);
+
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.04);
+            scene.add(ambientLight);
+
+            const moonLight = new THREE.DirectionalLight(0x7ec0ee, 0.12);
+            moonLight.position.set(20, 40, 20);
+            moonLight.castShadow = true;
+            moonLight.shadow.mapSize.width = 1024;
+            moonLight.shadow.mapSize.height = 1024;
+            scene.add(moonLight);
+
+            const atticGlow = new THREE.PointLight(0xff0055, 1.2, 12);
+            atticGlow.position.set(0, 18, -6);
+            scene.add(atticGlow);
+
+            flashlightLight = new THREE.SpotLight(0xffffff, gameState.flashlightOn ? 8 : 0, 18, Math.PI / 4.5, 0.6, 1);
+            flashlightLight.castShadow = true;
+            flashlightLight.shadow.mapSize.width = 1024;
+            flashlightLight.shadow.mapSize.height = 1024;
+            scene.add(flashlightLight);
+            scene.add(flashlightLight.target);
+
+            buildFirstPersonLimbs();
+            buildMap();
+
+            setupPointerLock();
+            setupKeyboardControls();
+            window.addEventListener('resize', onWindowResize, false);
+        }
+
+        // --- HOOFDMENU START TRIGGER ---
+        function startGame(loadSaved) {
+            document.getElementById("start-screen").classList.add("hidden");
+            
+            const inputName = document.getElementById("global-name-input").value.trim();
+            if (inputName) {
+                gameState.playerName = inputName;
+                myPlayerName = inputName;
+            } else if (!gameState.playerName || gameState.playerName === "Gast") {
+                gameState.playerName = "Gast_" + Math.floor(100 + Math.random() * 900);
+                myPlayerName = gameState.playerName;
+            }
+
+            if (loadSaved && !isMultiplayer) {
+                loadSavedGame();
+                gameState.introActive = false; 
+            } else if (!loadSaved && !isMultiplayer) {
+                const locations = ["mailbox", "bricks", "stump", "birdhouse"];
+                gameState.keyLocationId = locations[Math.floor(Math.random() * locations.length)];
+                gameState.outsideKeyCollected = false;
+
+                gameState.doorCode = {
+                    dial1: Math.floor(Math.random() * 12) + 1,
+                    dial2: Math.floor(Math.random() * 12) + 1,
+                    dial3: Math.floor(Math.random() * 12) + 1
+                };
+            }
+
+            if (gameState.flashlightCollected) {
+                document.getElementById("battery-hud").classList.remove("hidden");
+            }
+
+            init3DWorld();
+            
+            if (loadSaved && gameState.playerPosition && !isMultiplayer) {
+                camera.position.set(gameState.playerPosition.x, gameState.playerPosition.y, gameState.playerPosition.z);
+                if (gameState.playerRotation) {
+                    euler.x = gameState.playerRotation.x;
+                    euler.y = gameState.playerRotation.y;
+                    camera.quaternion.setFromEuler(euler);
+                }
+            } else if (loadSaved && gameState.insideTent) {
+                camera.position.set(6, 0.8, 16);
+            }
+
+            if (isMultiplayer) {
+                listenToMultiplayerRoom();
+                gameState.introActive = false; 
+            }
+
+            if (gameState.introActive) {
+                document.getElementById("intro-cinematic-overlay").classList.remove("hidden");
+            } else {
+                document.getElementById("game-hud").classList.remove("opacity-0");
+                document.getElementById("hud-player-name").textContent = gameState.playerName;
+                document.getElementById("canvas-container").requestPointerLock();
+            }
+
+            gameStarted = true;
+            isPaused = false;
+
+            animate();
+            
+            setTimeout(() => {
+                initAudio();
+            }, 1000);
+        }
+
+        window.onload = function() {
+            checkExistingSave();
+        };
+    </script>
+</body>
+</html>

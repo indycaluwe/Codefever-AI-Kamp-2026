@@ -1,0 +1,2248 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Waterpark Tycoon Simulator</title>
+    <!-- Tailwind CSS voor een modern dashboard -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght=300;400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            user-select: none;
+            overflow: hidden;
+            background-color: #0f172a;
+        }
+        /* Custom scrollbar voor logboek */
+        .custom-scroll::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scroll::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.3);
+        }
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: rgba(148, 163, 184, 0.3);
+            border-radius: 10px;
+        }
+        /* Neon gloed effecten */
+        .neon-border {
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.4);
+        }
+        .neon-text {
+            text-shadow: 0 0 8px rgba(6, 182, 212, 0.6);
+        }
+    </style>
+</head>
+<body class="relative w-screen h-screen">
+
+    <!-- CANVAS VOOR 3D WORLD -->
+    <div id="canvas-container" class="absolute inset-0 w-full h-full z-0"></div>
+
+    <!-- HUD OVERLAY (BOVENIN) -->
+    <div class="absolute top-4 left-4 right-4 z-10 flex flex-wrap justify-between items-start gap-3 pointer-events-none">
+        
+        <!-- Economie Info -->
+        <div class="bg-slate-900/90 border border-slate-800 backdrop-blur-md rounded-2xl p-4 flex gap-6 pointer-events-auto shadow-2xl transition-all">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-amber-500/20 text-amber-400 rounded-xl flex items-center justify-center text-lg shadow-inner">
+                    <i class="fa-solid fa-coins animate-bounce"></i>
+                </div>
+                <div>
+                    <span class="text-[10px] text-slate-400 font-semibold block uppercase tracking-wider">Muntjes</span>
+                    <span id="stat-coins" class="text-xl font-extrabold text-amber-400 tracking-tight">150</span>
+                </div>
+            </div>
+
+            <div class="w-px h-10 bg-slate-800"></div>
+
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-emerald-500/20 text-emerald-400 rounded-xl flex items-center justify-center text-lg shadow-inner">
+                    <i class="fa-solid fa-arrow-trend-up"></i>
+                </div>
+                <div>
+                    <span class="text-[10px] text-slate-400 font-semibold block uppercase tracking-wider">Daginkomen</span>
+                    <span id="stat-income" class="text-xl font-extrabold text-emerald-400 tracking-tight">€0</span>
+                </div>
+            </div>
+
+            <div class="w-px h-10 bg-slate-800"></div>
+
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-sky-500/20 text-sky-400 rounded-xl flex items-center justify-center text-lg shadow-inner">
+                    <i class="fa-solid fa-users"></i>
+                </div>
+                <div>
+                    <span class="text-[10px] text-slate-400 font-semibold block uppercase tracking-wider">Bezoekers</span>
+                    <span id="stat-visitors" class="text-xl font-extrabold text-sky-400 tracking-tight">0 / 25</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tijd & Dag Info en Cloud Status -->
+        <div class="flex flex-col gap-2 pointer-events-auto">
+            <div class="bg-slate-900/90 border border-slate-800 backdrop-blur-md rounded-2xl py-3 px-5 flex items-center gap-4 shadow-2xl">
+                <div class="text-right">
+                    <span id="stat-day" class="text-xs font-black text-indigo-400 block tracking-widest uppercase">DAG 1</span>
+                    <span id="stat-time" class="text-lg font-bold text-slate-200">08:00</span>
+                </div>
+                <div class="w-10 h-10 bg-indigo-500/20 text-indigo-400 rounded-xl flex items-center justify-center text-xl shadow-inner">
+                    <i id="time-icon" class="fa-solid fa-cloud-sun animate-pulse"></i>
+                </div>
+            </div>
+            
+            <div class="bg-slate-900/90 border border-slate-800 backdrop-blur-md rounded-xl py-1.5 px-3 flex items-center justify-between gap-3 shadow-2xl text-[10px]">
+                <div class="flex items-center gap-1 text-slate-300 font-semibold">
+                    <i class="fa-solid fa-cloud text-cyan-400"></i>
+                    <span id="cloud-status" class="text-[9px] text-cyan-400">Verbinden...</span>
+                </div>
+                <button onclick="if(typeof window.saveGameToCloud === 'function') { window.saveGameToCloud(); }" class="bg-cyan-600 hover:bg-cyan-500 active:scale-95 text-white font-bold px-1.5 py-0.5 rounded transition-all">
+                    Opslaan
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- NOTIFICATIES & LOGBOEK (LINKSBOVEN) -->
+    <div class="absolute top-24 left-4 z-10 w-80 max-h-48 flex flex-col gap-2 pointer-events-none overflow-hidden">
+        <!-- Live status meldingen -->
+        <div id="notification-box" class="transform -translate-x-full transition-transform duration-300 bg-cyan-950/90 border border-cyan-500/30 text-cyan-300 px-3 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 shadow-lg shadow-cyan-950/20">
+            <i class="fa-solid fa-circle-info"></i>
+            <span id="notification-text">Welkom in je waterpark!</span>
+        </div>
+        
+        <!-- Lopende Logberichten -->
+        <div class="bg-slate-950/70 border border-slate-900 backdrop-blur-sm rounded-xl p-3 flex flex-col gap-1.5 h-32 pointer-events-auto">
+            <span class="text-[9px] text-slate-500 font-bold uppercase tracking-wider border-b border-slate-900 pb-1">Park Activiteitslog</span>
+            <div id="log-container" class="custom-scroll flex-1 overflow-y-auto text-[10px] text-slate-400 flex flex-col gap-1 pr-1">
+                <div class="text-cyan-400">🚨 Systeem: Bestuur Charles met WASD/Pijltjes. Spatie = Slaan!</div>
+                <div>Bezoekers arriveren bij de kassa.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ACTIE KNOPPEN (RECHTSONDER) -->
+    <div class="absolute bottom-6 right-6 z-10 flex flex-col gap-3">
+        <!-- Winkel Openen -->
+        <button id="btn-toggle-shop" class="pointer-events-auto w-14 h-14 rounded-2xl bg-gradient-to-tr from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-extrabold text-xl shadow-lg hover:shadow-cyan-500/20 flex items-center justify-center transition-all hover:scale-105 active:scale-95">
+            <i class="fa-solid fa-store"></i>
+        </button>
+        <!-- Charles Sla Actie -->
+        <button id="btn-attack" class="pointer-events-auto w-14 h-14 rounded-2xl bg-gradient-to-tr from-rose-600 to-pink-700 hover:from-rose-500 hover:to-pink-600 text-white font-extrabold text-xl shadow-lg hover:shadow-rose-600/20 flex items-center justify-center transition-all hover:scale-105 active:scale-95">
+            <i class="fa-solid fa-gavel"></i>
+        </button>
+    </div>
+
+    <!-- VIRTUELE TOUCH JOYSTICK VOOR MOBIEL -->
+    <div id="joystick-zone" class="absolute bottom-6 left-6 z-10 w-32 h-32 rounded-full bg-slate-900/60 border border-slate-800/80 backdrop-blur-xs flex items-center justify-center pointer-events-auto touch-none shadow-2xl md:hidden">
+        <div id="joystick-handle" class="w-12 h-12 rounded-full bg-gradient-to-tr from-slate-700 to-slate-500 shadow-md transform transition-transform duration-75 pointer-events-none"></div>
+    </div>
+
+    <!-- WINKEL OVERLAY / POPUP -->
+    <div id="shop-overlay" class="hidden absolute inset-0 z-20 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 w-full max-w-4xl max-h-[85vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden">
+            
+            <!-- Header -->
+            <div class="p-6 bg-slate-950/50 border-b border-slate-800 flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-cyan-500/10 text-cyan-400 rounded-xl flex items-center justify-center text-lg">
+                        <i class="fa-solid fa-basket-shopping"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-black text-white tracking-wide">Waterpark Upgrade Shop</h2>
+                        <p class="text-xs text-slate-400">Verbeter attracties, wapens en breid je grondgebied uit!</p>
+                    </div>
+                </div>
+                <button id="btn-close-shop" class="w-10 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-all">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Shop Items Grid (Scrollable) -->
+            <div class="p-6 overflow-y-auto flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 custom-scroll">
+                
+                <!-- Gele Glijbaan -->
+                <div class="bg-slate-950/60 border border-slate-850 hover:border-slate-800 rounded-2xl p-4 flex flex-col justify-between transition-all">
+                    <div>
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="font-bold text-white text-base">Gele Glijbaan</h3>
+                            <span class="text-xs bg-yellow-950 text-yellow-400 font-bold px-2 py-0.5 rounded border border-yellow-800/40">Glijbaan</span>
+                        </div>
+                        <p class="text-xs text-slate-400 mb-4">Plaats een sfeervolle, spiraalvormige gele glijbaan (7.5m hoog!). Bezoekers betalen om eraf te roetsjen.</p>
+                    </div>
+                    <button id="buy-slide-yellow" class="w-full py-2.5 px-4 bg-gradient-to-r from-emerald-500 to-teal-600 disabled:from-slate-800 disabled:to-slate-800 text-white font-bold text-xs rounded-xl flex items-center justify-between shadow-md hover:brightness-110 disabled:brightness-100 active:scale-95 transition-all">
+                        <span class="btn-text">KOOP GELE GLIJBAAN</span>
+                        <span class="flex items-center gap-1"><i class="fa-solid fa-coins"></i> 200</span>
+                    </button>
+                </div>
+
+                <!-- Rode Glijbaan -->
+                <div class="bg-slate-950/60 border border-slate-850 hover:border-slate-800 rounded-2xl p-4 flex flex-col justify-between transition-all">
+                    <div>
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="font-bold text-white text-base">Rode Glijbaan</h3>
+                            <span class="text-xs bg-red-950 text-red-400 font-bold px-2 py-0.5 rounded border border-red-800/40">Glijbaan</span>
+                        </div>
+                        <p class="text-xs text-slate-400 mb-4">Een angstaanjagend hoge, steile rode glijbaan (10m hoog!). Levert extra inkomsten en sensatie op.</p>
+                    </div>
+                    <button id="buy-slide-red" class="w-full py-2.5 px-4 bg-gradient-to-r from-emerald-500 to-teal-600 disabled:from-slate-800 disabled:to-slate-800 text-white font-bold text-xs rounded-xl flex items-center justify-between shadow-md hover:brightness-110 disabled:brightness-100 active:scale-95 transition-all">
+                        <span class="btn-text">KOOP RODE GLIJBAAN</span>
+                        <span class="flex items-center gap-1"><i class="fa-solid fa-coins"></i> 400</span>
+                    </button>
+                </div>
+
+                <!-- Paarse Vrije Val -->
+                <div class="bg-slate-950/60 border border-slate-850 hover:border-slate-800 rounded-2xl p-4 flex flex-col justify-between transition-all">
+                    <div>
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="font-bold text-white text-base">Paarse Vrije Val</h3>
+                            <span class="text-xs bg-purple-950 text-purple-400 font-bold px-2 py-0.5 rounded border border-purple-800/40">Glijbaan</span>
+                        </div>
+                        <p class="text-xs text-slate-400 mb-4">Een loodrechte paarse vrije val glijbaan van maar liefst 13 meter hoog! Bezoekers genereren hiermee dagelijks €100 extra!</p>
+                    </div>
+                    <button id="buy-slide-purple" class="w-full py-2.5 px-4 bg-gradient-to-r from-emerald-500 to-teal-600 disabled:from-slate-800 disabled:to-slate-800 text-white font-bold text-xs rounded-xl flex items-center justify-between shadow-md hover:brightness-110 disabled:brightness-100 active:scale-95 transition-all">
+                        <span class="btn-text">KOOP PAARSE GLIJBAAN</span>
+                        <span class="flex items-center gap-1"><i class="fa-solid fa-coins"></i> 550</span>
+                    </button>
+                </div>
+
+                <!-- Blauwe Tornado Loop -->
+                <div class="bg-slate-950/60 border border-slate-850 hover:border-slate-800 rounded-2xl p-4 flex flex-col justify-between transition-all">
+                    <div>
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="font-bold text-white text-base">Blauwe Tornado Loop</h3>
+                            <span class="text-xs bg-blue-950 text-blue-400 font-bold px-2 py-0.5 rounded border border-blue-800/40">Glijbaan</span>
+                        </div>
+                        <p class="text-xs text-slate-400 mb-4">De ultieme loopingglijbaan (16m hoog!) die zorgt voor een gigantische extra dagelijkse inkomstenboost van €150.</p>
+                    </div>
+                    <button id="buy-slide-blue" class="w-full py-2.5 px-4 bg-gradient-to-r from-emerald-500 to-teal-600 disabled:from-slate-800 disabled:to-slate-800 text-white font-bold text-xs rounded-xl flex items-center justify-between shadow-md hover:brightness-110 disabled:brightness-100 active:scale-95 transition-all">
+                        <span class="btn-text">KOOP BLAUWE GLIJBAAN</span>
+                        <span class="flex items-center gap-1"><i class="fa-solid fa-coins"></i> 750</span>
+                    </button>
+                </div>
+
+                <!-- Wapen Upgrades -->
+                <div class="bg-slate-950/60 border border-slate-850 hover:border-slate-800 rounded-2xl p-4 flex flex-col justify-between transition-all">
+                    <div>
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 id="shop-weapon-name" class="font-bold text-white text-base">Zwembad Buis</h3>
+                            <span id="shop-weapon-level" class="text-xs bg-rose-950 text-rose-400 font-bold px-2 py-0.5 rounded border border-rose-800/40">Niveau 1</span>
+                        </div>
+                        <p id="shop-weapon-desc" class="text-xs text-slate-400 mb-4">Upgrade je slagwapen om zombies sneller te verslaan en meer bereik te hebben.</p>
+                    </div>
+                    <button id="buy-weapon" class="w-full py-2.5 px-4 bg-gradient-to-r from-rose-500 to-pink-600 disabled:from-slate-800 disabled:to-slate-800 text-white font-bold text-xs rounded-xl flex items-center justify-between shadow-md hover:brightness-110 disabled:brightness-100 active:scale-95 transition-all">
+                        <span id="shop-weapon-btn-text">UPGRADE WAPEN</span>
+                        <span class="flex items-center gap-1"><i class="fa-solid fa-coins"></i> <span id="shop-weapon-cost">80</span></span>
+                    </button>
+                </div>
+
+                <!-- Snelle Zwemvliezen -->
+                <div class="bg-slate-950/60 border border-slate-850 hover:border-slate-800 rounded-2xl p-4 flex flex-col justify-between transition-all">
+                    <div>
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="font-bold text-white text-base">Snelle Zwemvliezen</h3>
+                            <span class="text-xs bg-cyan-950 text-cyan-400 font-bold px-2 py-0.5 rounded border border-cyan-800/40">Uitrusting</span>
+                        </div>
+                        <p class="text-xs text-slate-400 mb-4">Geef Charles neon-blauwe zwemvliezen om vliegensvlug door het waterpark te sprinten! Verhoogt zijn loopsnelheid.</p>
+                    </div>
+                    <button id="buy-flippers" class="w-full py-2.5 px-4 bg-gradient-to-r from-emerald-500 to-teal-600 disabled:from-slate-800 disabled:to-slate-800 text-white font-bold text-xs rounded-xl flex items-center justify-between shadow-md hover:brightness-110 disabled:brightness-100 active:scale-95 transition-all">
+                        <span class="btn-text">KOOP ZWEMVLIEZEN</span>
+                        <span class="flex items-center gap-1"><i class="fa-solid fa-coins"></i> 120</span>
+                    </button>
+                </div>
+
+                <!-- Golfslagmachine -->
+                <div class="bg-slate-950/60 border border-slate-850 hover:border-slate-800 rounded-2xl p-4 flex flex-col justify-between transition-all">
+                    <div>
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="font-bold text-white text-base">Golfslagmachine Pro</h3>
+                            <span class="text-xs bg-sky-950 text-sky-400 font-bold px-2 py-0.5 rounded border border-sky-800/40">Attractie Boost</span>
+                        </div>
+                        <p class="text-xs text-slate-400 mb-4">Installeer een golfslaggenerator. Creëert golven en genereert passief €80 extra inkomen per dag!</p>
+                    </div>
+                    <button id="buy-wave-machine" class="w-full py-2.5 px-4 bg-gradient-to-r from-emerald-500 to-teal-600 disabled:from-slate-800 disabled:to-slate-800 text-white font-bold text-xs rounded-xl flex items-center justify-between shadow-md hover:brightness-110 disabled:brightness-100 active:scale-95 transition-all">
+                        <span class="btn-text">KOOP GOLFSLAGMACHINE</span>
+                        <span class="flex items-center gap-1"><i class="fa-solid fa-coins"></i> 220</span>
+                    </button>
+                </div>
+
+                <!-- Limonadefontein -->
+                <div class="bg-slate-950/60 border border-slate-850 hover:border-slate-800 rounded-2xl p-4 flex flex-col justify-between transition-all">
+                    <div>
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="font-bold text-white text-base">Roze Limonadefontein</h3>
+                            <span class="text-xs bg-fuchsia-950 text-fuchsia-400 font-bold px-2 py-0.5 rounded border border-fuchsia-800/40">Decoratie</span>
+                        </div>
+                        <p class="text-xs text-slate-400 mb-4">Plaats een sprankelende roze limonadefontein bij het café. Bezoekers zijn er dol op en betalen dagelijks €40 extra!</p>
+                    </div>
+                    <button id="buy-soda-fountain" class="w-full py-2.5 px-4 bg-gradient-to-r from-emerald-500 to-teal-600 disabled:from-slate-800 disabled:to-slate-800 text-white font-bold text-xs rounded-xl flex items-center justify-between shadow-md hover:brightness-110 disabled:brightness-100 active:scale-95 transition-all">
+                        <span class="btn-text">KOOP LIMONADEFONTEIN</span>
+                        <span class="flex items-center gap-1"><i class="fa-solid fa-coins"></i> 140</span>
+                    </button>
+                </div>
+
+                <!-- Park Uitbreiding 1 -->
+                <div class="bg-slate-950/60 border border-slate-850 hover:border-slate-800 rounded-2xl p-4 flex flex-col justify-between transition-all">
+                    <div>
+                        <div class="flex justify-between items-start mb-1">
+                            <h3 class="font-bold text-white text-base">Terrein Uitbreiden 1</h3>
+                            <span id="shop-expand-status" class="text-xs text-cyan-400 font-semibold">Standaard</span>
+                        </div>
+                        <p class="text-xs text-slate-400 mb-4">Vergroot het terrein van je park, plant extra palmen en verhoog de maximale bezoekerslimiet naar 40!</p>
+                    </div>
+                    <button id="buy-expansion" class="w-full py-2.5 px-4 bg-gradient-to-r from-emerald-500 to-teal-600 disabled:from-slate-800 disabled:to-slate-800 text-white font-bold text-xs rounded-xl flex items-center justify-between shadow-md hover:brightness-110 disabled:brightness-100 active:scale-95 transition-all">
+                        <span>UITBREIDEN</span>
+                        <span class="flex items-center gap-1"><i class="fa-solid fa-coins"></i> 300</span>
+                    </button>
+                </div>
+
+                <!-- Mega Park Uitbreiding 2 -->
+                <div class="bg-slate-950/60 border border-slate-850 hover:border-slate-800 rounded-2xl p-4 flex flex-col justify-between transition-all">
+                    <div>
+                        <div class="flex justify-between items-start mb-1">
+                            <h3 class="font-bold text-white text-base">Mega Park Territorium</h3>
+                            <span id="shop-mega-expand-status" class="text-xs text-purple-400 font-semibold">Vergrendeld</span>
+                        </div>
+                        <p class="text-xs text-slate-400 mb-4">Verdubbel de parkgrootte, voeg neon-lichtmasten toe en verhoog de limiet naar 60 bezoekers! (Vereist Uitbreiding 1)</p>
+                    </div>
+                    <button id="buy-expansion-2" class="w-full py-2.5 px-4 bg-gradient-to-r from-purple-600 to-indigo-700 disabled:from-slate-800 disabled:to-slate-800 text-white font-bold text-xs rounded-xl flex items-center justify-between shadow-md hover:brightness-110 disabled:brightness-100 active:scale-95 transition-all">
+                        <span>MEGA UITBREIDEN</span>
+                        <span class="flex items-center gap-1"><i class="fa-solid fa-coins"></i> 600</span>
+                    </button>
+                </div>
+
+            </div>
+            
+            <div class="p-4 border-t border-slate-800 bg-slate-950/40 text-center text-[10px] text-slate-500">
+                Tip: Beweeg in de buurt van de gekleurde ring onderaan een glijbaan om de trap op te lopen en te glijden!
+            </div>
+        </div>
+    </div>
+
+    <!-- THREE.JS & GAME CODE -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // Globale Speltoestanden & Economie
+        const gameState = {
+            coins: 150,
+            dailyIncome: 0,
+            day: 1,
+            timeOfDay: 0.25, // 0 tot 1.0 (0 = middernacht, 0.25 = ochtend, 0.5 = middag, 0.75 = avond)
+            visitorsCount: 0,
+            maxVisitors: 25, // Direct starten met max 25 bezoekers!
+            weaponLevel: 0,
+            parkExpanded: false,
+            parkMegaExpanded: false, // Nieuwe mega uitbreiding!
+            slidesBought: {
+                green: true, // Groen is direct vanaf start gekocht!
+                yellow: false,
+                red: false,
+                purple: false,
+                blue: false
+            },
+            flippersBought: false,
+            waveMachineBought: false,
+            sodaFountainBought: false
+        };
+
+        // Configuratie voor wapenupgrades
+        const weaponsConfig = [
+            { name: "Zwembad Buis", cost: 80, range: 3.5, damage: 1, color: 0x38bdf8, desc: "Een plastic holle buis. Bereik: Normaal, Schade: 1" },
+            { name: "Neon Schuimstang", cost: 160, range: 4.5, damage: 2.2, color: 0xa855f7, desc: "Een glow-in-the-dark schuimstaaf. Bereik: Groter, Schade: 2.2" },
+            { name: "Super Waterkanon", cost: 300, range: 6.0, damage: 4.5, color: 0x10b981, desc: "Een gigantisch watergeweer op luchtdruk. Bereik: Heel Groot, Schade: 4.5" },
+            { name: "Laser Drijfplank", cost: 500, range: 8.0, damage: 8.0, color: 0xf43f5e, desc: "Een futuristisch hitte-kickboard. Bereik: Maximaal, Schade: Extreem" }
+        ];
+
+        // 3D Scene setup variabelen
+        let scene, camera, renderer, clock;
+        let mainLight, ambientLight;
+        let groundMesh, waterMesh, sandMesh, poolWallMesh;
+        let gameTime = 0;
+
+        // Entiteiten
+        let player = null;
+        const visitors = [];
+        const zombies = [];
+        const floatingObjects = [];
+        const activeSlides = {};
+        const staticNPCs = {};
+
+        // Personeel dagkosten
+        const staff = {
+            kassa: 15,
+            helper: 15,
+            barista: 15
+        };
+
+        // Besturing & Invoer
+        const keys = { w: false, a: false, s: false, d: false, ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false };
+        const touchJoystick = { active: false, startX: 0, startY: 0, moveX: 0, moveY: 0 };
+
+        // Geluiden (Web Audio API Synthesizer)
+        let audioCtx = null;
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playSynthSound(freq, type, duration, volume) {
+            try {
+                initAudio();
+                if (!audioCtx) return;
+                const osc = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+                osc.type = type || 'sine';
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                gainNode.gain.setValueAtTime(volume || 0.1, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+                osc.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            } catch (e) {
+                console.log("Audio feedback mislukt of geblokkeerd door browserbeleid.");
+            }
+        }
+
+        // Initialisatie
+        function init3D() {
+            const container = document.getElementById('canvas-container');
+            
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x0f172a);
+            scene.fog = new THREE.FogExp2(0x0f172a, 0.015);
+
+            camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+            camera.position.set(0, 18, 22);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            container.appendChild(renderer.domElement);
+
+            clock = new THREE.Clock();
+
+            // Sfeerverlichting
+            ambientLight = new THREE.AmbientLight(0xffffff, 0.45);
+            scene.add(ambientLight);
+
+            mainLight = new THREE.DirectionalLight(0xffffff, 1.2);
+            mainLight.position.set(20, 40, 15);
+            mainLight.castShadow = true;
+            mainLight.shadow.mapSize.width = 1024;
+            mainLight.shadow.mapSize.height = 1024;
+            mainLight.shadow.camera.near = 0.5;
+            mainLight.shadow.camera.far = 150;
+            const d = 50;
+            mainLight.shadow.camera.left = -d;
+            mainLight.shadow.camera.right = d;
+            mainLight.shadow.camera.top = d;
+            mainLight.shadow.camera.bottom = -d;
+            scene.add(mainLight);
+
+            buildParkEnvironment();
+            spawnCharles();
+            buildInteractiveFeatures();
+            setupKeyboard();
+            setupTouchJoystick();
+            setupUIEvents();
+            updateShopButtonsState();
+            updateHUD();
+
+            // Eerste bezoekers spawnen (Meteen een grotere startgroep voor de gezelligheid)
+            for(let i=0; i<12; i++) {
+                setTimeout(spawnVisitor, i * 400);
+            }
+
+            window.addEventListener('resize', onWindowResize);
+        }
+
+        // Centrale functie om grond, strand en zwembad soepel mee op te schalen
+        function applyExpansionScaling() {
+            let scale = 1.0;
+            if (gameState.parkMegaExpanded) {
+                scale = 2.2;
+            } else if (gameState.parkExpanded) {
+                scale = 1.5;
+            }
+
+            if (groundMesh) groundMesh.scale.set(scale, scale, scale);
+            if (sandMesh) sandMesh.scale.set(scale, 1.0, scale);
+            if (poolWallMesh) poolWallMesh.scale.set(scale, 1.0, scale);
+            if (waterMesh) waterMesh.scale.set(scale, scale, 1.0); // 2D wateroppervlak schaalt perfect mee!
+        }
+
+        // Reconstructie van 3D objecten na laden uit de cloud
+        window.applyLoadedStateToWorld = function() {
+            if (!scene || !player) return; // Wacht tot 3D en Charles geladen zijn
+
+            // 1. Bouw Yellow slide indien reeds gekocht
+            if (gameState.slidesBought.yellow && !activeSlides['yellow']) {
+                createSlide({
+                    id: 'yellow',
+                    color: 0xeab308, // Geel
+                    height: 7.5,
+                    stairsPos: new THREE.Vector3(-18, 0, -5),
+                    topPos: new THREE.Vector3(-18, 7.5, -5),
+                    poolLandingPos: new THREE.Vector3(-6, 0.5, 4),
+                    curveOffset: new THREE.Vector2(-5, 4)
+                });
+            }
+
+            // 2. Bouw Red slide indien reeds gekocht
+            if (gameState.slidesBought.red && !activeSlides['red']) {
+                createSlide({
+                    id: 'red',
+                    color: 0xef4444, // Rood
+                    height: 10.0,
+                    stairsPos: new THREE.Vector3(18, 0, -5),
+                    topPos: new THREE.Vector3(18, 10, -5),
+                    poolLandingPos: new THREE.Vector3(6, 0.5, 4),
+                    curveOffset: new THREE.Vector2(5, 4)
+                });
+            }
+
+            // 3. Bouw Purple slide indien reeds gekocht
+            if (gameState.slidesBought.purple && !activeSlides['purple']) {
+                createSlide({
+                    id: 'purple',
+                    color: 0xa855f7, // Paars
+                    height: 13.0,
+                    stairsPos: new THREE.Vector3(-28, 0, -15),
+                    topPos: new THREE.Vector3(-28, 13, -15),
+                    poolLandingPos: new THREE.Vector3(-12, 0.5, 6),
+                    curveOffset: new THREE.Vector2(-10, 6)
+                });
+            }
+
+            // 4. Bouw Blue slide indien reeds gekocht
+            if (gameState.slidesBought.blue && !activeSlides['blue']) {
+                createSlide({
+                    id: 'blue',
+                    color: 0x2563eb, // Blauw
+                    height: 16.0,
+                    stairsPos: new THREE.Vector3(28, 0, -15),
+                    topPos: new THREE.Vector3(28, 16, -15),
+                    poolLandingPos: new THREE.Vector3(12, 0.5, 6),
+                    curveOffset: new THREE.Vector2(10, 6)
+                });
+            }
+
+            // 5. Rust Zwemvliezen uit indien gekocht
+            if (gameState.flippersBought && player.mesh) {
+                const leftLeg = player.mesh.children[3];
+                if (leftLeg && leftLeg.children.length === 0) {
+                    const fLGeo = new THREE.BoxGeometry(0.5, 0.1, 0.8);
+                    const fLMat = new THREE.MeshStandardMaterial({ color: 0x06b6d4, roughness: 0.3 });
+                    const fL = new THREE.Mesh(fLGeo, fLMat);
+                    fL.position.set(0, -0.45, 0.2);
+                    leftLeg.add(fL);
+
+                    const rightLeg = player.mesh.children[4];
+                    const fR = new THREE.Mesh(fLGeo, fLMat);
+                    fR.position.set(0, -0.45, 0.2);
+                    rightLeg.add(fR);
+                }
+            }
+
+            // 6. Spawn Golfslagmachine visual indien gekocht
+            if (gameState.waveMachineBought && !window.waveMachineSpawnedFlag) {
+                spawnWaveMachineVisual();
+                window.waveMachineSpawnedFlag = true;
+            }
+
+            // 7. Spawn Limonadefontein visual indien gekocht
+            if (gameState.sodaFountainBought && !window.sodaFountainSpawnedFlag) {
+                spawnSodaFountain();
+                window.sodaFountainSpawnedFlag = true;
+            }
+
+            // 8. Schaal grondgebied en het zwembad op basis van de uitbreidingsstaat
+            applyExpansionScaling();
+
+            if (gameState.parkMegaExpanded) {
+                if (!window.megaExpandedSpawnedFlag) {
+                    spawnPalmTree(-45, -45);
+                    spawnPalmTree(45, -45);
+                    spawnPalmTree(-45, 45);
+                    spawnPalmTree(45, 45);
+                    spawnPalmTree(0, -45);
+                    spawnPalmTree(0, 45);
+                    spawnMegaParkDecorations();
+                    window.megaExpandedSpawnedFlag = true;
+                    window.expandedSpawnedFlag = true;
+                }
+            } else if (gameState.parkExpanded) {
+                if (!window.expandedSpawnedFlag) {
+                    spawnPalmTree(-36, -35);
+                    spawnPalmTree(36, -35);
+                    spawnPalmTree(-36, 35);
+                    spawnPalmTree(36, 35);
+                    window.expandedSpawnedFlag = true;
+                }
+            }
+
+            // 9. Update Charles' wapen model handmatig
+            updatePlayerWeaponVisual();
+
+            // 10. Update interface labels & dag teller
+            document.getElementById('stat-day').innerText = "DAG " + gameState.day;
+            updateHUD();
+            updateShopButtonsState();
+        };
+
+        // 3D Billboard label generator boven hoofden
+        function createTextLabel(text, colorHex) {
+            if (!colorHex) colorHex = '#ffffff';
+            const canvas = document.createElement('canvas');
+            canvas.width = 256;
+            canvas.height = 64;
+            const ctx = canvas.getContext('2d');
+            
+            // Background capsule
+            ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+            if (ctx.roundRect) {
+                ctx.roundRect(0, 0, 256, 64, 16);
+            } else {
+                ctx.rect(0, 0, 256, 64);
+            }
+            ctx.fill();
+
+            // Border
+            ctx.strokeStyle = '#06b6d4';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+
+            // Text styling
+            ctx.font = 'Bold 28px Inter, Arial';
+            ctx.fillStyle = colorHex;
+            ctx.textBaseline = 'middle';
+            ctx.textAlign = 'center';
+            ctx.fillText(text, 128, 32);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            const material = new THREE.SpriteMaterial({ map: texture, transparent: true });
+            const sprite = new THREE.Sprite(material);
+            sprite.scale.set(3.5, 0.87, 1);
+            return sprite;
+        }
+
+        // Bouw de basis omgeving
+        function buildParkEnvironment() {
+            // Gras ondergrond (Speelgebied)
+            const groundGeo = new THREE.PlaneGeometry(80, 80);
+            const groundMat = new THREE.MeshStandardMaterial({ 
+                color: 0x15803d, 
+                roughness: 0.9,
+                metalness: 0.1
+            });
+            groundMesh = new THREE.Mesh(groundGeo, groundMat);
+            groundMesh.rotation.x = -Math.PI / 2;
+            groundMesh.receiveShadow = true;
+            scene.add(groundMesh);
+
+            // Zandstrand rondom het bad (Nu opgeslagen in sandMesh om op te schalen)
+            const sandGeo = new THREE.BoxGeometry(45, 0.2, 35);
+            const sandMat = new THREE.MeshStandardMaterial({ color: 0xfef08a, roughness: 0.9 });
+            sandMesh = new THREE.Mesh(sandGeo, sandMat);
+            sandMesh.position.set(0, 0.05, 0);
+            sandMesh.receiveShadow = true;
+            scene.add(sandMesh);
+
+            // Zwembad randen / bodem (Pool - Nu opgeslagen in poolWallMesh om op te schalen)
+            const poolWallGeo = new THREE.BoxGeometry(32, 1.2, 22);
+            const poolWallMat = new THREE.MeshStandardMaterial({ color: 0xbae6fd, roughness: 0.2 });
+            poolWallMesh = new THREE.Mesh(poolWallGeo, poolWallMat);
+            poolWallMesh.position.set(0, 0.5, 0);
+            poolWallMesh.receiveShadow = true;
+            scene.add(poolWallMesh);
+
+            // Wateroppervlak - Opaque, fel azuurblauw met een eigen lichtgevende blauwe gloed
+            const waterGeo = new THREE.PlaneGeometry(31, 21);
+            const waterMat = new THREE.MeshPhongMaterial({ 
+                color: 0x00a2ff,          // Intense tropische aqua/cyaan kleur
+                emissive: 0x0033aa,       // Prachtige blauwe glow die altijd straalt (voorkomt grijs effect)
+                shininess: 150,           // Extreem glad oppervlak voor felle zon-glinsteringen
+                specular: 0xffffff,       // Heldere witte reflecties
+                flatShading: false
+            });
+            waterMesh = new THREE.Mesh(waterGeo, waterMat);
+            waterMesh.rotation.x = -Math.PI / 2;
+            waterMesh.position.set(0, 1.12, 0); // Precies bovenop de rand geplaatst om clippen te voorkomen
+            scene.add(waterMesh);
+
+            // Sfeervolle ligstoelen langs de waterkant
+            spawnSunbed(-18, 5, Math.PI / 2);
+            spawnSunbed(-18, -5, Math.PI / 2);
+            spawnSunbed(18, 5, -Math.PI / 2);
+            spawnSunbed(18, -5, -Math.PI / 2);
+
+            // Wat Palmbomen
+            spawnPalmTree(-34, -30);
+            spawnPalmTree(34, -30);
+            spawnPalmTree(-34, 30);
+            spawnPalmTree(34, 30);
+
+            // Kassa-ingang & Hekwerk
+            buildGate();
+
+            // Café
+            buildCafe();
+
+            // Startglijbaan: direct een GROENE glijbaan
+            createSlide({
+                id: 'green',
+                color: 0x22c55e, // Groen
+                height: 5.5,
+                stairsPos: new THREE.Vector3(0, 0, -18),
+                topPos: new THREE.Vector3(0, 5.5, -18),
+                poolLandingPos: new THREE.Vector3(0, 0.5, -6),
+                curveOffset: new THREE.Vector2(0, -6)
+            });
+        }
+
+        // Hulpfuncties voor modellen
+        function spawnSunbed(x, z, rotY) {
+            const bed = new THREE.Group();
+            bed.position.set(x, 0.1, z);
+            bed.rotation.y = rotY;
+
+            // Ligbed
+            const boardGeo = new THREE.BoxGeometry(1.5, 0.1, 3.2);
+            const boardMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+            const board = new THREE.Mesh(boardGeo, boardMat);
+            board.position.y = 0.15;
+            board.castShadow = true;
+            bed.add(board);
+
+            // Kussen
+            const pillowGeo = new THREE.BoxGeometry(1.3, 0.2, 0.7);
+            const pillowMat = new THREE.MeshStandardMaterial({ color: 0x0ea5e9 });
+            const pillow = new THREE.Mesh(pillowGeo, pillowMat);
+            pillow.position.set(0, 0.25, -1.1);
+            bed.add(pillow);
+
+            scene.add(bed);
+        }
+
+        function spawnPalmTree(x, z) {
+            const tree = new THREE.Group();
+            tree.position.set(x, 0, z);
+
+            // Stam
+            const trunkGeo = new THREE.CylinderGeometry(0.3, 0.5, 6, 8);
+            const trunkMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.9 });
+            const trunk = new THREE.Mesh(trunkGeo, trunkMat);
+            trunk.position.y = 3;
+            trunk.castShadow = true;
+            tree.add(trunk);
+
+            // Bladeren (Waaier)
+            const leafGeo = new THREE.ConeGeometry(3, 1, 5);
+            const leafMat = new THREE.MeshStandardMaterial({ color: 0x166534, roughness: 0.6 });
+            for (let i = 0; i < 4; i++) {
+                const leaf = new THREE.Mesh(leafGeo, leafMat);
+                leaf.position.y = 5.8;
+                leaf.rotation.x = 0.4;
+                leaf.rotation.y = (Math.PI / 2) * i;
+                tree.add(leaf);
+            }
+
+            scene.add(tree);
+        }
+
+        function buildGate() {
+            const gate = new THREE.Group();
+            gate.position.set(0, 0, 36); // Achteraan als entree
+
+            // Zuilen
+            const pillarGeo = new THREE.BoxGeometry(1.8, 4.5, 1.8);
+            const pillarMat = new THREE.MeshStandardMaterial({ color: 0x475569 });
+            
+            const pillarL = new THREE.Mesh(pillarGeo, pillarMat);
+            pillarL.position.set(-5, 2.25, 0);
+            pillarL.castShadow = true;
+            gate.add(pillarL);
+
+            const pillarR = new THREE.Mesh(pillarGeo, pillarMat);
+            pillarR.position.set(5, 2.25, 0);
+            pillarR.castShadow = true;
+            gate.add(pillarR);
+
+            // Dakbalk
+            const beamGeo = new THREE.BoxGeometry(13, 0.8, 2.2);
+            const beam = new THREE.Mesh(beamGeo, pillarMat);
+            beam.position.set(0, 4.5, 0);
+            beam.castShadow = true;
+            gate.add(beam);
+
+            scene.add(gate);
+
+            // Kassamedewerker NPC
+            const staffGeo = new THREE.BoxGeometry(0.9, 1.8, 0.9);
+            const staffMat = new THREE.MeshStandardMaterial({ color: 0x3b82f6 });
+            const kassamedewerker = new THREE.Mesh(staffGeo, staffMat);
+            kassamedewerker.position.set(-3.5, 0.9, 34);
+            scene.add(kassamedewerker);
+
+            const lbl = createTextLabel("Kassa-NPC", "#3b82f6");
+            lbl.position.set(-3.5, 2.3, 34);
+            scene.add(lbl);
+        }
+
+        function buildCafe() {
+            const cafe = new THREE.Group();
+            cafe.position.set(-32, 0, 10); // Links gevestigd
+
+            const floorGeo = new THREE.BoxGeometry(12, 0.2, 12);
+            const floorMat = new THREE.MeshStandardMaterial({ color: 0x334155 });
+            const floor = new THREE.Mesh(floorGeo, floorMat);
+            floor.position.y = 0.1;
+            floor.receiveShadow = true;
+            cafe.add(floor);
+
+            // Toonbank
+            const barGeo = new THREE.BoxGeometry(9, 2, 1.8);
+            const barMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.4 });
+            const bar = new THREE.Mesh(barGeo, barMat);
+            bar.position.set(0, 1.1, 2);
+            bar.castShadow = true;
+            cafe.add(bar);
+
+            // Achterwand
+            const wallGeo = new THREE.BoxGeometry(9, 5, 0.5);
+            const wallMat = new THREE.MeshStandardMaterial({ color: 0x1e293b });
+            const wall = new THREE.Mesh(wallGeo, wallMat);
+            wall.position.set(0, 2.5, -4);
+            wall.castShadow = true;
+            cafe.add(wall);
+
+            // Parasol / Dak
+            const umbrellaPoleGeo = new THREE.CylinderGeometry(0.1, 0.1, 5.5, 8);
+            const umbrellaPoleMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8 });
+            const pole = new THREE.Mesh(umbrellaPoleGeo, umbrellaPoleMat);
+            pole.position.set(0, 2.75, 0);
+            pole.castShadow = true;
+            cafe.add(pole);
+
+            const topGeo = new THREE.ConeGeometry(6, 2, 16);
+            const topMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.6 });
+            const top = new THREE.Mesh(topGeo, topMat);
+            top.position.set(0, 5.5, 0);
+            top.castShadow = true;
+            cafe.add(top);
+
+            scene.add(cafe);
+        }
+
+        function spawnSodaFountain() {
+            const fountain = new THREE.Group();
+            fountain.position.set(-24, 0.1, 14); // Vlakbij het café
+
+            // Voetstuk / Opvangbak
+            const bowlGeo = new THREE.CylinderGeometry(1.3, 0.9, 0.8, 12);
+            const bowlMat = new THREE.MeshStandardMaterial({ color: 0x06b6d4, metalness: 0.6, roughness: 0.2 });
+            const bowl = new THREE.Mesh(bowlGeo, bowlMat);
+            bowl.position.y = 0.4;
+            bowl.castShadow = true;
+            fountain.add(bowl);
+
+            // Waterstraal buis in het midden
+            const tubeGeo = new THREE.CylinderGeometry(0.12, 0.12, 1.8, 8);
+            const tubeMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+            const tube = new THREE.Mesh(tubeGeo, tubeMat);
+            tube.position.y = 1.1;
+            fountain.add(tube);
+
+            // Sprankelende roze vloeistof
+            const liquidGeo = new THREE.CylinderGeometry(1.2, 1.1, 0.15, 12);
+            const liquidMat = new THREE.MeshStandardMaterial({ color: 0xec4899, roughness: 0.1, transparent: true, opacity: 0.95 });
+            const liquid = new THREE.Mesh(liquidGeo, liquidMat);
+            liquid.position.y = 0.75;
+            fountain.add(liquid);
+
+            scene.add(fountain);
+
+            floatingObjects.push({
+                mesh: liquid,
+                baseY: 0.75,
+                offset: 0,
+                speed: 7.0
+            });
+        }
+
+        function spawnWaveMachineVisual() {
+            const waveM = new THREE.Group();
+            waveM.position.set(0, 1.0, -10.5); // Aan de achterrand van de pool
+
+            const baseGeo = new THREE.BoxGeometry(4.5, 1.5, 1.5);
+            const baseMat = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.8, roughness: 0.1 });
+            const base = new THREE.Mesh(baseGeo, baseMat);
+            waveM.add(base);
+
+            // Led strip die gloeit
+            const stripGeo = new THREE.BoxGeometry(3.8, 0.25, 0.2);
+            const stripMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
+            const strip = new THREE.Mesh(stripGeo, stripMat);
+            strip.position.set(0, 0.3, 0.7);
+            waveM.add(strip);
+
+            scene.add(waveM);
+        }
+
+        function spawnMegaParkDecorations() {
+            const pillarGeo = new THREE.CylinderGeometry(0.3, 0.3, 5, 8);
+            const bulbGeo = new THREE.SphereGeometry(0.6, 8, 8);
+            const lightColors = [0xec4899, 0x3b82f6, 0xa855f7];
+
+            const spawnLightPillar = (x, z, color) => {
+                const pillarGroup = new THREE.Group();
+                pillarGroup.position.set(x, 0, z);
+
+                const post = new THREE.Mesh(pillarGeo, new THREE.MeshStandardMaterial({ color: 0x1e293b }));
+                post.position.y = 2.5;
+                pillarGroup.add(post);
+
+                const bulb = new THREE.Mesh(bulbGeo, new THREE.MeshBasicMaterial({ color: color }));
+                bulb.position.y = 5.2;
+                pillarGroup.add(bulb);
+
+                const light = new THREE.PointLight(color, 2.5, 15);
+                light.position.y = 5.2;
+                pillarGroup.add(light);
+
+                scene.add(pillarGroup);
+            };
+
+            spawnLightPillar(-44, -44, lightColors[0]);
+            spawnLightPillar(44, -44, lightColors[1]);
+            spawnLightPillar(-44, 44, lightColors[2]);
+            spawnLightPillar(44, 44, lightColors[0]);
+        }
+
+        // Spawn Avatar Charles
+        function spawnCharles() {
+            player = {
+                mesh: new THREE.Group(),
+                speed: 13.5,
+                state: 'walking', // walking, climbing, sliding, landed
+                climbProgress: 0,
+                slideProgress: 0,
+                slideTarget: null,
+                attackCooldown: 0,
+                weaponMesh: null
+            };
+
+            // Hoofd
+            const headGeo = new THREE.BoxGeometry(1.0, 1.0, 1.0);
+            const headMat = new THREE.MeshStandardMaterial({ color: 0xffd1a9, roughness: 0.8 });
+            const head = new THREE.Mesh(headGeo, headMat);
+            head.position.y = 1.9;
+            head.castShadow = true;
+            player.mesh.add(head);
+
+            // Haardos (Charles z'n oranje krullen)
+            const hairGeo = new THREE.BoxGeometry(1.15, 0.4, 1.15);
+            const hairMat = new THREE.MeshStandardMaterial({ color: 0xea580c });
+            const hair = new THREE.Mesh(hairGeo, hairMat);
+            hair.position.y = 2.4;
+            player.mesh.add(hair);
+
+            // Romp / Zwembroek (Blauw)
+            const bodyGeo = new THREE.BoxGeometry(1.2, 1.3, 0.8);
+            const bodyMat = new THREE.MeshStandardMaterial({ color: 0x2563eb });
+            const body = new THREE.Mesh(bodyGeo, bodyMat);
+            body.position.y = 0.85;
+            body.castShadow = true;
+            player.mesh.add(body);
+
+            // Linkerbeen
+            const legGeo = new THREE.BoxGeometry(0.45, 0.9, 0.45);
+            const legMat = new THREE.MeshStandardMaterial({ color: 0xffd1a9 });
+            const leftLeg = new THREE.Mesh(legGeo, legMat);
+            leftLeg.position.set(-0.35, 0.25, 0);
+            leftLeg.castShadow = true;
+            player.mesh.add(leftLeg);
+
+            // Rechterbeen
+            const rightLeg = new THREE.Mesh(legGeo, legMat);
+            rightLeg.position.set(0.35, 0.25, 0);
+            rightLeg.castShadow = true;
+            player.mesh.add(rightLeg);
+
+            scene.add(player.mesh);
+            player.mesh.position.set(0, 0.1, 15);
+
+            // 3D Billboard label boven Charles
+            const charlesLabel = createTextLabel("Charles", "#ffffff");
+            charlesLabel.position.set(0, 3.2, 0);
+            player.mesh.add(charlesLabel);
+
+            updatePlayerWeaponVisual();
+        }
+
+        // Bouw/Update Charles zijn wapen visual
+        function updatePlayerWeaponVisual() {
+            if (player.weaponMesh) {
+                player.mesh.remove(player.weaponMesh);
+            }
+
+            const currentWeapon = weaponsConfig[gameState.weaponLevel];
+            player.weaponMesh = new THREE.Group();
+
+            const shaftGeo = new THREE.CylinderGeometry(0.1, 0.1, 1.8, 8);
+            const shaftMat = new THREE.MeshStandardMaterial({ color: currentWeapon.color, metalness: 0.6, roughness: 0.2 });
+            const shaft = new THREE.Mesh(shaftGeo, shaftMat);
+            shaft.rotation.x = Math.PI / 2;
+            shaft.position.set(0.9, 0.8, 0.5);
+            shaft.castShadow = true;
+            player.weaponMesh.add(shaft);
+
+            // Extra laser tip voor top level wapens
+            if (gameState.weaponLevel >= 2) {
+                const tipGeo = new THREE.SphereGeometry(0.2, 8, 8);
+                const tipMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+                const tip = new THREE.Mesh(tipGeo, tipMat);
+                tip.position.set(0.9, 0.8, 1.4);
+                player.weaponMesh.add(tip);
+            }
+
+            player.mesh.add(player.weaponMesh);
+        }
+
+        // Bouw sfeervolle, drijvende ringen op het water
+        function buildInteractiveFeatures() {
+            const buildTorus = (x, z, color) => {
+                const torusGeo = new THREE.TorusGeometry(1.1, 0.35, 8, 24);
+                const torusMat = new THREE.MeshStandardMaterial({ color: color, roughness: 0.1 });
+                const torus = new THREE.Mesh(torusGeo, torusMat);
+                torus.rotation.x = Math.PI / 2;
+                torus.position.set(x, 1.1, z);
+                torus.receiveShadow = true;
+                torus.castShadow = true;
+                scene.add(torus);
+
+                floatingObjects.push({
+                    mesh: torus,
+                    baseY: 1.1,
+                    offset: Math.random() * Math.PI,
+                    speed: 2.2 + Math.random() * 1.5
+                });
+            };
+
+            // Drijvende Donuts in het zwembad
+            buildTorus(-8, -3, 0xf43f5e); // Roze donut
+            buildTorus(8, 2, 0xfacc15);  // Gele band
+            buildTorus(-4, 4, 0x06b6d4);  // Blauwe band
+        }
+
+        // Generieke glijbaan bouwer met Splines
+        function createSlide(config) {
+            // config: { id, color, height, stairsPos, topPos, poolLandingPos, curveOffset }
+            const slideGroup = new THREE.Group();
+
+            // Trap (Stairs) omhoog
+            const steps = Math.floor(config.height * 2.5);
+            const stepHeight = config.height / steps;
+            
+            for (let i = 0; i <= steps; i++) {
+                const progress = i / steps;
+                const stepPos = new THREE.Vector3().lerpVectors(config.stairsPos, config.topPos, progress);
+                
+                const stepGeo = new THREE.BoxGeometry(2.5, 0.25, 0.7);
+                const stepMat = new THREE.MeshStandardMaterial({ color: 0x475569 });
+                const step = new THREE.Mesh(stepGeo, stepMat);
+                step.position.copy(stepPos);
+                step.position.y += 0.125;
+                step.castShadow = true;
+                slideGroup.add(step);
+            }
+
+            // Glijbaan Spline Pad
+            const midPoint = new THREE.Vector3().lerpVectors(config.topPos, config.poolLandingPos, 0.5);
+            midPoint.x += config.curveOffset.x;
+            midPoint.z += config.curveOffset.y;
+            midPoint.y = config.height * 0.4;
+
+            const curve = new THREE.CatmullRomCurve3([
+                config.topPos,
+                midPoint,
+                config.poolLandingPos
+            ]);
+
+            const tubeGeo = new THREE.TubeGeometry(curve, 32, 0.85, 12, false);
+            const tubeMat = new THREE.MeshStandardMaterial({ 
+                color: config.color, 
+                roughness: 0.1,
+                metalness: 0.1,
+                side: THREE.DoubleSide
+            });
+            const tube = new THREE.Mesh(tubeGeo, tubeMat);
+            tube.castShadow = true;
+            slideGroup.add(tube);
+
+            // Visueel Instap-Zone (gloeicirkel onderaan de trap)
+            const ringGeo = new THREE.RingGeometry(1.4, 1.6, 16);
+            const ringMat = new THREE.MeshBasicMaterial({ color: config.color, side: THREE.DoubleSide });
+            const ring = new THREE.Mesh(ringGeo, ringMat);
+            ring.rotation.x = -Math.PI / 2;
+            ring.position.copy(config.stairsPos);
+            ring.position.y = 0.15;
+            slideGroup.add(ring);
+
+            // Glimmende 3D Pijl boven instapcirkel
+            const arrowGeo = new THREE.ConeGeometry(0.4, 0.9, 5);
+            const arrowMat = new THREE.MeshBasicMaterial({ color: config.color });
+            const arrow = new THREE.Mesh(arrowGeo, arrowMat);
+            arrow.rotation.x = Math.PI; // Kop naar beneden wijzen
+            arrow.position.copy(config.stairsPos);
+            arrow.position.y = 2.2;
+            slideGroup.add(arrow);
+
+            scene.add(slideGroup);
+
+            // Toevoegen aan actieve glijbanen
+            activeSlides[config.id] = {
+                config: config,
+                curve: curve,
+                group: slideGroup,
+                arrow: arrow
+            };
+
+            // Register pijl voor zwevende animatie
+            if (!window.glowingArrows) window.glowingArrows = [];
+            window.glowingArrows.push(arrow);
+        }
+
+        // Bezoekers Spawnen & Gedrag
+        function spawnVisitor() {
+            if (visitors.length >= gameState.maxVisitors) return;
+
+            const visitor = {
+                mesh: new THREE.Group(),
+                speed: 3.5 + Math.random() * 2.0,
+                targetPos: new THREE.Vector3(),
+                state: 'wandering', // wandering, using_slide, drinking, leaving
+                slideTarget: null,
+                climbProgress: 0,
+                slideProgress: 0,
+                color: Math.random() * 0xffffff,
+                timer: 0
+            };
+
+            // Simpel lichaam
+            const headGeo = new THREE.SphereGeometry(0.4, 8, 8);
+            const headMat = new THREE.MeshStandardMaterial({ color: 0xffe4e6 });
+            const head = new THREE.Mesh(headGeo, headMat);
+            head.position.y = 1.35;
+            visitor.mesh.add(head);
+
+            const bodyGeo = new THREE.CylinderGeometry(0.35, 0.35, 1.0, 8);
+            const bodyMat = new THREE.MeshStandardMaterial({ color: visitor.color });
+            const body = new THREE.Mesh(bodyGeo, bodyMat);
+            body.position.y = 0.65;
+            body.castShadow = true;
+            visitor.mesh.add(body);
+
+            scene.add(visitor.mesh);
+            
+            // Start bij de entreepoort
+            visitor.mesh.position.set(-2 + Math.random() * 4, 0.1, 35);
+            setNewVisitorTarget(visitor);
+
+            visitors.push(visitor);
+            updateHUD();
+        }
+
+        function setNewVisitorTarget(visitor) {
+            visitor.timer = 4.0 + Math.random() * 6.0;
+
+            const rand = Math.random();
+            if (rand < 0.4 && Object.keys(activeSlides).length > 0) {
+                // Wil glijden! Zoek beschikbare glijbaan
+                const slideIds = Object.keys(activeSlides);
+                const randomSlideId = slideIds[Math.floor(Math.random() * slideIds.length)];
+                visitor.state = 'using_slide';
+                visitor.slideTarget = randomSlideId;
+                visitor.targetPos.copy(activeSlides[randomSlideId].config.stairsPos);
+            } else if (rand < 0.65) {
+                // Wil drinken bij café
+                visitor.state = 'drinking';
+                visitor.targetPos.set(-28 + Math.random() * 5, 0.1, 10 + Math.random() * 4);
+            } else {
+                // Wandelen over het pad / zandgebied
+                visitor.state = 'wandering';
+                visitor.targetPos.set(-20 + Math.random() * 40, 0.1, -15 + Math.random() * 30);
+            }
+        }
+
+        // Zombies spawnen 's nachts
+        function spawnZombie() {
+            if (zombies.length >= 8) return;
+
+            const zombie = {
+                mesh: new THREE.Group(),
+                speed: 3.8,
+                health: 3,
+                timer: 0
+            };
+
+            // Zombie model (Groen-grijs)
+            const headGeo = new THREE.BoxGeometry(0.8, 0.8, 0.8);
+            const headMat = new THREE.MeshStandardMaterial({ color: 0x15803d });
+            const head = new THREE.Mesh(headGeo, headMat);
+            head.position.y = 1.4;
+            zombie.mesh.add(head);
+
+            const bodyGeo = new THREE.BoxGeometry(0.9, 1.1, 0.6);
+            const bodyMat = new THREE.MeshStandardMaterial({ color: 0x166534 });
+            const body = new THREE.Mesh(bodyGeo, bodyMat);
+            body.position.y = 0.65;
+            body.castShadow = true;
+            zombie.mesh.add(body);
+
+            scene.add(zombie.mesh);
+
+            // Spawnt buiten de rand van het waterpark
+            const angle = Math.random() * Math.PI * 2;
+            const dist = 38;
+            zombie.mesh.position.set(Math.cos(angle) * dist, 0.1, Math.sin(angle) * dist);
+
+            const lbl = createTextLabel("Zombie 🧟", "#f43f5e");
+            lbl.position.set(0, 2.2, 0);
+            zombie.mesh.add(lbl);
+
+            zombies.push(zombie);
+            addLogMessage("🧟 Er is een zombie het waterpark binnen geslopen!");
+        }
+
+        // Key listen setup
+        function setupKeyboard() {
+            window.addEventListener('keydown', (e) => {
+                if (keys.hasOwnProperty(e.key)) keys[e.key] = true;
+                
+                // Attack trigger
+                if (e.key === ' ' || e.key === 'Spacebar') {
+                    triggerCharlesAttack();
+                }
+
+                // Shop B toets
+                if (e.key === 'b' || e.key === 'B') {
+                    toggleShop();
+                }
+            });
+
+            window.addEventListener('keyup', (e) => {
+                if (keys.hasOwnProperty(e.key)) keys[e.key] = false;
+            });
+        }
+
+        // Mobiele joystick detectie
+        function setupTouchJoystick() {
+            const zone = document.getElementById('joystick-zone');
+            const handle = document.getElementById('joystick-handle');
+
+            zone.addEventListener('touchstart', (e) => {
+                touchJoystick.active = true;
+                const t = e.touches[0];
+                touchJoystick.startX = t.clientX;
+                touchJoystick.startY = t.clientY;
+            });
+
+            zone.addEventListener('touchmove', (e) => {
+                if (!touchJoystick.active) return;
+                const t = e.touches[0];
+                const dx = t.clientX - touchJoystick.startX;
+                const dy = t.clientY - touchJoystick.startY;
+                const dist = Math.min(Math.sqrt(dx * dx + dy * dy), 40);
+
+                const angle = Math.atan2(dy, dx);
+                const mx = Math.cos(angle) * dist;
+                const my = Math.sin(angle) * dist;
+
+                handle.style.transform = "translate(" + mx + "px, " + my + "px)";
+
+                // Joystick waardes normaliseren
+                touchJoystick.moveX = mx / 40;
+                touchJoystick.moveY = my / 40;
+            });
+
+            const stopJoystick = () => {
+                touchJoystick.active = false;
+                touchJoystick.moveX = 0;
+                touchJoystick.moveY = 0;
+                handle.style.transform = 'translate(0px, 0px)';
+            };
+
+            zone.addEventListener('touchend', stopJoystick);
+            zone.addEventListener('touchcancel', stopJoystick);
+        }
+
+        function setupUIEvents() {
+            document.getElementById('btn-toggle-shop').addEventListener('click', toggleShop);
+            document.getElementById('btn-close-shop').addEventListener('click', toggleShop);
+            document.getElementById('btn-attack').addEventListener('click', triggerCharlesAttack);
+
+            // Gele Glijbaan kopen
+            document.getElementById('buy-slide-yellow').addEventListener('click', () => {
+                if (gameState.coins >= 200 && !gameState.slidesBought.yellow) {
+                    gameState.coins -= 200;
+                    gameState.slidesBought.yellow = true;
+                    
+                    createSlide({
+                        id: 'yellow',
+                        color: 0xeab308, // Geel
+                        height: 7.5,
+                        stairsPos: new THREE.Vector3(-18, 0, -5),
+                        topPos: new THREE.Vector3(-18, 7.5, -5),
+                        poolLandingPos: new THREE.Vector3(-6, 0.5, 4),
+                        curveOffset: new THREE.Vector2(-5, 4)
+                    });
+
+                    updateShopButtonsState();
+                    updateHUD();
+                    playSynthSound(440, 'triangle', 0.5, 0.2);
+                    showNotification("🎢 Gele Glijbaan succesvol gebouwd!");
+                    if (typeof window.saveGameToCloud === 'function') window.saveGameToCloud();
+                }
+            });
+
+            // Rode Glijbaan kopen
+            document.getElementById('buy-slide-red').addEventListener('click', () => {
+                if (gameState.coins >= 400 && !gameState.slidesBought.red) {
+                    gameState.coins -= 400;
+                    gameState.slidesBought.red = true;
+
+                    createSlide({
+                        id: 'red',
+                        color: 0xef4444, // Rood
+                        height: 10.0,
+                        stairsPos: new THREE.Vector3(18, 0, -5),
+                        topPos: new THREE.Vector3(18, 10, -5),
+                        poolLandingPos: new THREE.Vector3(6, 0.5, 4),
+                        curveOffset: new THREE.Vector2(5, 4)
+                    });
+
+                    updateShopButtonsState();
+                    updateHUD();
+                    playSynthSound(554, 'triangle', 0.5, 0.2);
+                    showNotification("🎢 Luxe Rode Glijbaan gebouwd!");
+                    if (typeof window.saveGameToCloud === 'function') window.saveGameToCloud();
+                }
+            });
+
+            // Paarse Glijbaan kopen
+            document.getElementById('buy-slide-purple').addEventListener('click', () => {
+                if (gameState.coins >= 550 && !gameState.slidesBought.purple) {
+                    gameState.coins -= 550;
+                    gameState.slidesBought.purple = true;
+
+                    createSlide({
+                        id: 'purple',
+                        color: 0xa855f7, // Paars
+                        height: 13.0,
+                        stairsPos: new THREE.Vector3(-28, 0, -15),
+                        topPos: new THREE.Vector3(-28, 13, -15),
+                        poolLandingPos: new THREE.Vector3(-12, 0.5, 6),
+                        curveOffset: new THREE.Vector2(-10, 6)
+                    });
+
+                    updateShopButtonsState();
+                    updateHUD();
+                    showNotification("🎢 Paarse Vrije Val Glijbaan gebouwd!");
+                    addLogMessage("Paarse Vrije Val Glijbaan gebouwd.");
+                    playSynthSound(700, 'triangle', 0.5, 0.25);
+                    if (typeof window.saveGameToCloud === 'function') window.saveGameToCloud();
+                }
+            });
+
+            // Blauwe Tornado Loop kopen
+            document.getElementById('buy-slide-blue').addEventListener('click', () => {
+                if (gameState.coins >= 750 && !gameState.slidesBought.blue) {
+                    gameState.coins -= 750;
+                    gameState.slidesBought.blue = true;
+
+                    createSlide({
+                        id: 'blue',
+                        color: 0x2563eb, // Blauw
+                        height: 16.0,
+                        stairsPos: new THREE.Vector3(28, 0, -15),
+                        topPos: new THREE.Vector3(28, 16, -15),
+                        poolLandingPos: new THREE.Vector3(12, 0.5, 6),
+                        curveOffset: new THREE.Vector2(10, 6)
+                    });
+
+                    updateShopButtonsState();
+                    updateHUD();
+                    showNotification("🌀 Blauwe Tornado Loop gebouwd!");
+                    addLogMessage("Blauwe Tornado Loop Glijbaan gebouwd.");
+                    playSynthSound(800, 'triangle', 0.5, 0.25);
+                    if (typeof window.saveGameToCloud === 'function') window.saveGameToCloud();
+                }
+            });
+
+            // Wapen Upgrade kopen
+            document.getElementById('buy-weapon').addEventListener('click', () => {
+                const nextWepLvl = gameState.weaponLevel + 1;
+                if (nextWepLvl < weaponsConfig.length) {
+                    const nextWep = weaponsConfig[nextWepLvl];
+                    if (gameState.coins >= nextWep.cost) {
+                        gameState.coins -= nextWep.cost;
+                        gameState.weaponLevel = nextWepLvl;
+                        
+                        updatePlayerWeaponVisual();
+                        updateShopButtonsState();
+                        updateHUD();
+                        showNotification("⚔️ Wapen geupgrade naar: " + nextWep.name + "!");
+                        playSynthSound(330, 'sawtooth', 0.4, 0.25);
+                        if (typeof window.saveGameToCloud === 'function') window.saveGameToCloud();
+                    }
+                }
+            });
+
+            // Territorium Uitbreiding 1
+            document.getElementById('buy-expansion').addEventListener('click', () => {
+                if (gameState.coins >= 300 && !gameState.parkExpanded) {
+                    gameState.coins -= 300;
+                    gameState.parkExpanded = true;
+                    gameState.maxVisitors = 40; // Verhoogd naar 40 bezoekers
+
+                    // Schaal gras, zandstrand, zwembadrand en wateroppervlak direct mee!
+                    applyExpansionScaling();
+
+                    spawnPalmTree(-36, -35);
+                    spawnPalmTree(36, -35);
+                    spawnPalmTree(-36, 35);
+                    spawnPalmTree(36, 35);
+
+                    showNotification("🌳 Waterpark & Pool Uitgebreid naar 40 bezoekers limiet!");
+                    addLogMessage("Park & Pool territorium uitgebreid naar niveau 1.");
+                    updateShopButtonsState();
+                    updateHUD();
+                    playSynthSound(440, 'triangle', 0.5, 0.2);
+                    if (typeof window.saveGameToCloud === 'function') window.saveGameToCloud();
+                }
+            });
+
+            // Territorium Uitbreiding 2 (Mega Park)
+            document.getElementById('buy-expansion-2').addEventListener('click', () => {
+                if (gameState.coins >= 600 && gameState.parkExpanded && !gameState.parkMegaExpanded) {
+                    gameState.coins -= 600;
+                    gameState.parkMegaExpanded = true;
+                    gameState.maxVisitors = 60; // Verhoogd naar 60 bezoekers!
+
+                    // Schaal gras, zandstrand, zwembadrand en wateroppervlak direct mee!
+                    applyExpansionScaling();
+
+                    spawnPalmTree(-45, -45);
+                    spawnPalmTree(45, -45);
+                    spawnPalmTree(-45, 45);
+                    spawnPalmTree(45, 45);
+                    spawnPalmTree(0, -45);
+                    spawnPalmTree(0, 45);
+
+                    spawnMegaParkDecorations();
+
+                    showNotification("🎆 MEGA PARK & MEGA POOL GEACTIVEERD! Maximaal 60 bezoekers!");
+                    addLogMessage("Mega park & Pool territorium ontgrendeld. Maximale limiet is nu 60!");
+                    updateShopButtonsState();
+                    updateHUD();
+                    playSynthSound(660, 'sine', 0.7, 0.35);
+                    if (typeof window.saveGameToCloud === 'function') window.saveGameToCloud();
+                }
+            });
+
+            // Snelle Zwemvliezen kopen
+            document.getElementById('buy-flippers').addEventListener('click', () => {
+                if (gameState.coins >= 120 && !gameState.flippersBought) {
+                    gameState.coins -= 120;
+                    gameState.flippersBought = true;
+
+                    if (player && player.mesh) {
+                        const fLGeo = new THREE.BoxGeometry(0.5, 0.1, 0.8);
+                        const fLMat = new THREE.MeshStandardMaterial({ color: 0x06b6d4, roughness: 0.3 });
+                        
+                        const fL = new THREE.Mesh(fLGeo, fLMat);
+                        fL.position.set(0, -0.45, 0.2);
+                        player.mesh.children[3].add(fL); // Linkerbeen
+
+                        const fR = new THREE.Mesh(fLGeo, fLMat);
+                        fR.position.set(0, -0.45, 0.2);
+                        player.mesh.children[4].add(fR); // Rechterbeen
+                    }
+
+                    showNotification("👟 Zwemvliezen gekocht! Snelheid flink verhoogd!");
+                    addLogMessage("Snelle zwemvliezen uitgerust. Beweegsnelheid verhoogd!");
+                    updateShopButtonsState();
+                    updateHUD();
+                    playSynthSound(600, 'triangle', 0.3, 0.2);
+                    if (typeof window.saveGameToCloud === 'function') window.saveGameToCloud();
+                }
+            });
+
+            // Golfslagmachine kopen
+            document.getElementById('buy-wave-machine').addEventListener('click', () => {
+                if (gameState.coins >= 220 && !gameState.waveMachineBought) {
+                    gameState.coins -= 220;
+                    gameState.waveMachineBought = true;
+
+                    spawnWaveMachineVisual();
+                    showNotification("🌊 Golfslagmachine geactiveerd! +€80 passief daginkomen!");
+                    addLogMessage("Golfslagmachine Pro geïnstalleerd. Golfslag is verhoogd.");
+                    updateShopButtonsState();
+                    updateHUD();
+                    playSynthSound(150, 'sawtooth', 0.8, 0.3);
+                    if (typeof window.saveGameToCloud === 'function') window.saveGameToCloud();
+                }
+            });
+
+            // Limonadefontein kopen
+            document.getElementById('buy-soda-fountain').addEventListener('click', () => {
+                if (gameState.coins >= 140 && !gameState.sodaFountainBought) {
+                    gameState.coins -= 140;
+                    gameState.sodaFountainBought = true;
+
+                    spawnSodaFountain();
+                    showNotification("🥤 Limonadefontein gebouwd! +€40 extra dagelijkse bonus!");
+                    addLogMessage("Limonadefontein gebouwd vlakbij het café.");
+                    updateShopButtonsState();
+                    updateHUD();
+                    playSynthSound(480, 'sine', 0.6, 0.25);
+                    if (typeof window.saveGameToCloud === 'function') window.saveGameToCloud();
+                }
+            });
+        }
+
+        function toggleShop() {
+            const shop = document.getElementById('shop-overlay');
+            if (shop.classList.contains('hidden')) {
+                updateShopButtonsState();
+                shop.classList.remove('hidden');
+                playSynthSound(300, 'sine', 0.15, 0.1);
+            } else {
+                shop.classList.add('hidden');
+                playSynthSound(250, 'sine', 0.1, 0.1);
+            }
+        }
+
+        function updatePlayerMovement(delta) {
+            if (!player) return;
+
+            const camDistance = gameState.parkMegaExpanded ? 28 : (gameState.parkExpanded ? 24 : 22);
+            const camHeight = gameState.parkMegaExpanded ? 22 : (gameState.parkExpanded ? 20 : 18);
+            const targetCamPos = new THREE.Vector3(
+                player.mesh.position.x,
+                player.mesh.position.y + camHeight,
+                player.mesh.position.z + camDistance
+            );
+            camera.position.lerp(targetCamPos, 0.08);
+            camera.lookAt(player.mesh.position.x, player.mesh.position.y + 1, player.mesh.position.z);
+
+            if (player.attackCooldown > 0) player.attackCooldown -= delta;
+
+            if (player.state === 'walking') {
+                let mx = 0;
+                let mz = 0;
+
+                if (keys.w || keys.ArrowUp) mz = -1;
+                if (keys.s || keys.ArrowDown) mz = 1;
+                if (keys.a || keys.ArrowLeft) mx = -1;
+                if (keys.d || keys.ArrowRight) mx = 1;
+
+                if (touchJoystick.active) {
+                    mx = touchJoystick.moveX;
+                    mz = touchJoystick.moveY;
+                }
+
+                if (mx !== 0 || mz !== 0) {
+                    const length = Math.sqrt(mx * mx + mz * mz);
+                    
+                    const activeSpeed = gameState.flippersBought ? 22 : player.speed;
+                    const dx = (mx / length) * activeSpeed * delta;
+                    const dz = (mz / length) * activeSpeed * delta;
+
+                    const limit = gameState.parkMegaExpanded ? 70 : (gameState.parkExpanded ? 48 : 38);
+                    const nextX = Math.max(-limit, Math.min(limit, player.mesh.position.x + dx));
+                    const nextZ = Math.max(-limit, Math.min(limit, player.mesh.position.z + dz));
+
+                    player.mesh.position.x = nextX;
+                    player.mesh.position.z = nextZ;
+
+                    player.angle = Math.atan2(dx, dz);
+                    player.mesh.rotation.y = player.angle;
+
+                    const legSwing = Math.sin(gameTime * 12) * 0.4;
+                    player.mesh.children[3].rotation.x = legSwing;
+                    player.mesh.children[4].rotation.x = -legSwing;
+                } else {
+                    player.mesh.children[3].rotation.x = 0;
+                    player.mesh.children[4].rotation.x = 0;
+                }
+
+                // Glijbaan-ingang Trigger Check
+                Object.keys(activeSlides).forEach(slideId => {
+                    const slide = activeSlides[slideId];
+                    const distToStairs = player.mesh.position.distanceTo(slide.config.stairsPos);
+                    
+                    if (distToStairs < 1.8) {
+                        player.state = 'climbing';
+                        player.slideTarget = slideId;
+                        player.climbProgress = 0;
+                        addLogMessage("Charles beklimt de glijbaantrap! 🪜");
+                        playSynthSound(300, 'sine', 0.2, 0.1);
+                    }
+                });
+
+            } else if (player.state === 'climbing') {
+                const slide = activeSlides[player.slideTarget];
+                player.climbProgress += delta * 0.35; // Klimsnelheid
+
+                if (player.climbProgress >= 1.0) {
+                    player.climbProgress = 1.0;
+                    player.state = 'sliding';
+                    player.slideProgress = 0;
+                    addLogMessage("Charles zoeft door de glijbaan! 🎢🌊");
+                }
+
+                const currentPos = new THREE.Vector3().lerpVectors(
+                    slide.config.stairsPos,
+                    slide.config.topPos,
+                    player.climbProgress
+                );
+                player.mesh.position.copy(currentPos);
+                player.mesh.position.y += 0.1;
+
+            } else if (player.state === 'sliding') {
+                const slide = activeSlides[player.slideTarget];
+                player.slideProgress += delta * 0.7; // Glij-snelheid
+
+                if (player.slideProgress >= 1.0) {
+                    player.slideProgress = 1.0;
+                    player.state = 'walking';
+                    playSynthSound(120, 'sawtooth', 0.4, 0.45); // Splash sound!
+                    addLogMessage("Charles landt met een grote SPLASH in de pool! 💦");
+                    
+                    // Charles op de landing positie in de pool plaatsen
+                    player.mesh.position.copy(slide.config.poolLandingPos);
+                    player.mesh.position.y = 1.1; // Hoogte van het wateroppervlak
+                } else {
+                    const currentPos = slide.curve.getPointAt(player.slideProgress);
+                    player.mesh.position.copy(currentPos);
+                }
+            }
+        }
+
+        // Bezoekers en Zombies Update-lus (gecorrigeerd)
+        function updateNPCs(delta) {
+            visitors.forEach(visitor => {
+                visitor.timer -= delta;
+
+                if (visitor.state === 'wandering' || visitor.state === 'drinking') {
+                    // Beweeg richting doel
+                    const dist = visitor.mesh.position.distanceTo(visitor.targetPos);
+                    if (dist > 0.5) {
+                        const dir = new THREE.Vector3().subVectors(visitor.targetPos, visitor.mesh.position).normalize();
+                        visitor.mesh.position.addScaledVector(dir, visitor.speed * delta);
+                        
+                        // Roteren richting doel
+                        const angle = Math.atan2(dir.x, dir.z);
+                        visitor.mesh.rotation.y = angle;
+                    } else if (visitor.timer <= 0) {
+                        // Als de bezoeker klaar is met drinken bij het cafe, betaalt deze direct muntjes!
+                        if (visitor.state === 'drinking') {
+                            const drinkPayment = 15;
+                            gameState.coins += drinkPayment;
+                            addLogMessage("🥤 Bezoeker kocht limonade bij de bar! +" + drinkPayment + " Muntjes!");
+                            playSynthSound(580, 'sine', 0.15, 0.1);
+                            updateHUD();
+                        }
+                        setNewVisitorTarget(visitor);
+                    }
+                } else if (visitor.state === 'using_slide') {
+                    const slide = activeSlides[visitor.slideTarget];
+                    if (!slide) {
+                        setNewVisitorTarget(visitor);
+                        return;
+                    }
+
+                    // Eerst naar trap lopen
+                    const distToStairs = visitor.mesh.position.distanceTo(slide.config.stairsPos);
+                    if (distToStairs > 0.8) {
+                        const dir = new THREE.Vector3().subVectors(slide.config.stairsPos, visitor.mesh.position).normalize();
+                        visitor.mesh.position.addScaledVector(dir, visitor.speed * delta);
+                        visitor.mesh.rotation.y = Math.atan2(dir.x, dir.z);
+                    } else {
+                        // Begin met klimmen!
+                        visitor.state = 'climbing_stairs';
+                        visitor.climbProgress = 0;
+                    }
+                } else if (visitor.state === 'climbing_stairs') {
+                    const slide = activeSlides[visitor.slideTarget];
+                    visitor.climbProgress += delta * 0.4;
+
+                    if (visitor.climbProgress >= 1.0) {
+                        visitor.climbProgress = 1.0;
+                        visitor.state = 'sliding_down';
+                        visitor.slideProgress = 0;
+                    }
+
+                    const currentPos = new THREE.Vector3().lerpVectors(
+                        slide.config.stairsPos,
+                        slide.config.topPos,
+                        visitor.climbProgress
+                    );
+                    visitor.mesh.position.copy(currentPos);
+                    visitor.mesh.position.y += 0.05;
+                } else if (visitor.state === 'sliding_down') {
+                    const slide = activeSlides[visitor.slideTarget];
+                    visitor.slideProgress += delta * 0.75;
+
+                    if (visitor.slideProgress >= 1.0) {
+                        visitor.slideProgress = 1.0;
+                        visitor.state = 'wandering';
+                        visitor.mesh.position.copy(slide.config.poolLandingPos);
+                        visitor.mesh.position.y = 1.1;
+
+                        // Bezoeker betaalt direct muntjes bij het voltooien van de glijbaan!
+                        const slidePayment = 20;
+                        gameState.coins += slidePayment;
+                        addLogMessage("🎢 Bezoeker gleed van de glijbaan! +" + slidePayment + " Muntjes!");
+                        playSynthSound(520, 'sine', 0.25, 0.15);
+                        updateHUD();
+
+                        setNewVisitorTarget(visitor);
+                    } else {
+                        const currentPos = slide.curve.getPointAt(visitor.slideProgress);
+                        visitor.mesh.position.copy(currentPos);
+                    }
+                }
+            });
+
+            // Zombies AI & Combat jacht
+            zombies.forEach((zombie, index) => {
+                if (!player) return;
+
+                const distToPlayer = zombie.mesh.position.distanceTo(player.mesh.position);
+                
+                // Als Charles in de buurt is, jaag op hem!
+                if (distToPlayer < 15.0) {
+                    const dir = new THREE.Vector3().subVectors(player.mesh.position, zombie.mesh.position).normalize();
+                    dir.y = 0; // Alleen over grondoppervlak bewegen
+                    zombie.mesh.position.addScaledVector(dir, zombie.speed * delta);
+                    zombie.mesh.rotation.y = Math.atan2(dir.x, dir.z);
+
+                    // Charles aanraken / schade logica (optioneel, Charles heeft nu oneindig leven)
+                    if (distToPlayer < 1.2 && Math.random() < 0.01) {
+                        addLogMessage("⚠️ Charles werd geslagen door een zombie!");
+                        playSynthSound(100, 'sawtooth', 0.15, 0.2);
+                    }
+                } else {
+                    // Dwaal willekeurig
+                    zombie.timer -= delta;
+                    if (zombie.timer <= 0) {
+                        zombie.timer = 3.0 + Math.random() * 3.0;
+                        zombie.wanderAngle = Math.random() * Math.PI * 2;
+                    }
+                    const dx = Math.cos(zombie.wanderAngle) * zombie.speed * 0.5 * delta;
+                    const dz = Math.sin(zombie.wanderAngle) * zombie.speed * 0.5 * delta;
+                    zombie.mesh.position.x += dx;
+                    zombie.mesh.position.z += dz;
+                }
+            });
+        }
+
+        // Charles wapen aanval actie
+        function triggerCharlesAttack() {
+            if (!player || player.attackCooldown > 0) return;
+            player.attackCooldown = 0.45; // Cooldown tussen slagen
+
+            // Wapen zwaai animatie (rotatie van de arm/wapen mesh)
+            const weapon = player.weaponMesh;
+            if (weapon) {
+                const startRot = weapon.rotation.y;
+                let animT = 0;
+                
+                const swingInterval = setInterval(() => {
+                    animT += 0.1;
+                    weapon.rotation.y = startRot + Math.sin(animT * Math.PI) * 1.5;
+                    if (animT >= 1.0) {
+                        clearInterval(swingInterval);
+                        weapon.rotation.y = startRot;
+                    }
+                }, 15);
+            }
+
+            playSynthSound(400, 'sawtooth', 0.12, 0.15);
+
+            // Controleer of er zombies geraakt zijn
+            const currentWeapon = weaponsConfig[gameState.weaponLevel];
+            
+            for (let i = zombies.length - 1; i >= 0; i--) {
+                const zombie = zombies[i];
+                const dist = player.mesh.position.distanceTo(zombie.mesh.position);
+                
+                if (dist <= currentWeapon.range) {
+                    // Zombie geraakt!
+                    zombie.health -= currentWeapon.damage;
+                    gameState.coins += 5; // Direct muntjes per slag!
+                    playSynthSound(600, 'sawtooth', 0.2, 0.35); // Hit sound!
+
+                    // Tik zombie iets naar achteren (Knockback)
+                    const pushDir = new THREE.Vector3().subVectors(zombie.mesh.position, player.mesh.position).normalize();
+                    zombie.mesh.position.addScaledVector(pushDir, 2.2);
+
+                    addLogMessage("💥 Zombie geraakt! +5 Muntjes! Schade: " + currentWeapon.damage + ". Gezondheid over: " + Math.max(0, zombie.health).toFixed(1));
+
+                    if (zombie.health <= 0) {
+                        // Zombie dood -> geef extra bonus muntjes!
+                        gameState.coins += 25; // Verhoogd naar 25 bonus
+                        scene.remove(zombie.mesh);
+                        zombies.splice(i, 1);
+                        addLogMessage("🎉 Zombie verslagen! +25 Muntjes bonus verdiend!");
+                        playSynthSound(520, 'sine', 0.3, 0.4); // Coin pickup chime
+                    }
+                    updateHUD();
+                }
+            }
+        }
+
+        // Nieuwe dag start mechanisme
+        function startNewDay() {
+            gameState.day += 1;
+            document.getElementById('stat-day').innerText = "DAG " + gameState.day;
+
+            // Bezoekers betalen €50 per dag!
+            let earnings = visitors.length * 50;
+            let baristaBonus = Math.floor(visitors.length * (Math.random() * 25));
+            earnings += baristaBonus;
+
+            if (gameState.waveMachineBought) {
+                earnings += 80;
+            }
+            if (gameState.sodaFountainBought) {
+                earnings += 40;
+            }
+            if (gameState.slidesBought.purple) {
+                earnings += 100;
+            }
+            if (gameState.slidesBought.blue) {
+                earnings += 150;
+            }
+
+            // Loonkosten van personeel eraf trekken
+            let wages = 30 + (staff.helper ? 15 : 0);
+            let netto = earnings - wages;
+            gameState.coins += netto;
+
+            updateHUD();
+
+            addLogMessage("🌅 Dag " + gameState.day + " gestart! Inkomsten: +€" + earnings + ", Loonkosten: -€" + wages + ". Netto: +€" + netto);
+            showNotification("☀️ Dag " + gameState.day + " is aangebroken! Netto verdiend: +€" + netto);
+            playSynthSound(523, 'sine', 0.6, 0.25);
+
+            // Direct extra gasten laten instromen
+            const spawnAmount = Math.min(4, gameState.maxVisitors - visitors.length);
+            for (let i = 0; i < spawnAmount; i++) {
+                setTimeout(spawnVisitor, i * 1500);
+            }
+
+            // Automatisch opslaan bij de start van een nieuwe dag
+            if (typeof window.saveGameToCloud === 'function') {
+                window.saveGameToCloud();
+            }
+        }
+
+        // Animatie & Hoofdlus van het spel
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const delta = Math.min(clock.getDelta(), 0.1);
+            gameTime += delta;
+
+            // Laat de instappijlen zweven en draaien
+            if (window.glowingArrows) {
+                window.glowingArrows.forEach(arrow => {
+                    arrow.position.y = 1.9 + Math.sin(clock.getElapsedTime() * 4) * 0.25;
+                    arrow.rotation.y += delta * 2;
+                });
+            }
+
+            // Drijvende banden op het water laten dobberen
+            floatingObjects.forEach(obj => {
+                obj.mesh.position.y = obj.baseY + Math.sin(gameTime * obj.speed + obj.offset) * 0.06;
+                obj.mesh.rotation.z = Math.sin(gameTime * obj.speed * 0.5 + obj.offset) * 0.05;
+            });
+
+            updateTimeOfDay(delta);
+            updatePlayerMovement(delta);
+            updateNPCs(delta);
+
+            // Water rimpel effect op de juiste basishoogte (1.12) zodat het niet in de bodem zakt
+            if (waterMesh) {
+                const waveSpeedMultiplier = gameState.waveMachineBought ? 5.0 : 2.5;
+                const waveHeightMultiplier = gameState.waveMachineBought ? 0.08 : 0.04;
+                waterMesh.position.y = 1.12 + Math.sin(gameTime * waveSpeedMultiplier) * waveHeightMultiplier;
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        // Tijd progressie dag/nacht cyclus
+        function updateTimeOfDay(delta) {
+            gameState.timeOfDay += delta * 0.007; // Snelheid van de dagcyclus
+            if (gameState.timeOfDay >= 1.0) {
+                gameState.timeOfDay = 0;
+                startNewDay();
+            }
+
+            // Converteer decimale tijd naar 24-uurs weergave
+            const totalMinutes = Math.floor(gameState.timeOfDay * 1440);
+            const hours = Math.floor(totalMinutes / 60);
+            const minutes = totalMinutes % 60;
+            document.getElementById('stat-time').innerText = hours.toString().padStart(2, '0') + ":" + minutes.toString().padStart(2, '0');
+
+            // Sfeerverlichting verandering gebaseerd op tijdstip
+            let r, g, b, intensity, ambientInt;
+            let showNightEffects = false;
+
+            if (gameState.timeOfDay >= 0.25 && gameState.timeOfDay < 0.7) {
+                // Daglicht (06:00 - 17:00)
+                r = 1.0; g = 0.98; b = 0.92;
+                intensity = 1.2;
+                ambientInt = 0.45;
+                document.getElementById('time-icon').className = "fa-solid fa-cloud-sun text-amber-400 animate-pulse";
+            } else if (gameState.timeOfDay >= 0.7 && gameState.timeOfDay < 0.85) {
+                // Avondglorie / Zonsondergang (17:00 - 20:00)
+                r = 0.95; g = 0.55; b = 0.4;
+                intensity = 0.8;
+                ambientInt = 0.35;
+                document.getElementById('time-icon').className = "fa-solid fa-cloud-moon text-orange-400";
+            } else {
+                // Nacht (20:00 - 06:00)
+                r = 0.15; g = 0.25; b = 0.55;
+                intensity = 0.25;
+                ambientInt = 0.15;
+                showNightEffects = true;
+                document.getElementById('time-icon').className = "fa-solid fa-moon text-indigo-400 animate-bounce";
+            }
+
+            mainLight.color.setRGB(r, g, b);
+            mainLight.intensity = intensity;
+            ambientLight.intensity = ambientInt;
+
+            // 's Nachts spawnen er zombies (kansberekening per seconde)
+            if (showNightEffects && Math.random() < 0.006) {
+                spawnZombie();
+            }
+
+            // Organische instroom van nieuwe bezoekers gedurende de ochtend/middag
+            if (!showNightEffects && Math.random() < 0.015 && visitors.length < gameState.maxVisitors) {
+                spawnVisitor();
+            }
+        }
+
+        // Shop status updaten (activeren/deactiveren van koopknoppen)
+        function updateShopButtonsState() {
+            // Gele Glijbaan
+            const btnYellow = document.getElementById('buy-slide-yellow');
+            if (gameState.slidesBought.yellow) {
+                btnYellow.disabled = true;
+                btnYellow.querySelector('.btn-text').innerText = "AL GEKOCHT";
+                btnYellow.className = "w-full py-2.5 px-4 bg-slate-800 text-slate-500 font-bold text-xs rounded-xl flex items-center justify-center cursor-not-allowed";
+            } else {
+                btnYellow.disabled = gameState.coins < 200;
+            }
+
+            // Rode Glijbaan
+            const btnRed = document.getElementById('buy-slide-red');
+            if (gameState.slidesBought.red) {
+                btnRed.disabled = true;
+                btnRed.querySelector('.btn-text').innerText = "AL GEKOCHT";
+                btnRed.className = "w-full py-2.5 px-4 bg-slate-800 text-slate-500 font-bold text-xs rounded-xl flex items-center justify-center cursor-not-allowed";
+            } else {
+                btnRed.disabled = gameState.coins < 400;
+            }
+
+            // Paarse Glijbaan
+            const btnPurple = document.getElementById('buy-slide-purple');
+            if (gameState.slidesBought.purple) {
+                btnPurple.disabled = true;
+                btnPurple.querySelector('.btn-text').innerText = "AL GEKOCHT";
+                btnPurple.className = "w-full py-2.5 px-4 bg-slate-800 text-slate-500 font-bold text-xs rounded-xl flex items-center justify-center cursor-not-allowed";
+            } else {
+                btnPurple.disabled = gameState.coins < 550;
+            }
+
+            // Blauwe Glijbaan
+            const btnBlue = document.getElementById('buy-slide-blue');
+            if (gameState.slidesBought.blue) {
+                btnBlue.disabled = true;
+                btnBlue.querySelector('.btn-text').innerText = "AL GEKOCHT";
+                btnBlue.className = "w-full py-2.5 px-4 bg-slate-800 text-slate-500 font-bold text-xs rounded-xl flex items-center justify-center cursor-not-allowed";
+            } else {
+                btnBlue.disabled = gameState.coins < 750;
+            }
+
+            // Wapen Upgrade
+            const btnWeapon = document.getElementById('buy-weapon');
+            const nextWepLvl = gameState.weaponLevel + 1;
+            if (nextWepLvl >= weaponsConfig.length) {
+                btnWeapon.disabled = true;
+                document.getElementById('shop-weapon-btn-text').innerText = "MAXIMAAL NIVEAU";
+                document.getElementById('shop-weapon-cost').innerText = "-";
+            } else {
+                const nextWeapon = weaponsConfig[nextWepLvl];
+                document.getElementById('shop-weapon-name').innerText = nextWeapon.name;
+                document.getElementById('shop-weapon-level').innerText = "Niveau " + (nextWepLvl + 1);
+                document.getElementById('shop-weapon-desc').innerText = nextWeapon.desc;
+                document.getElementById('shop-weapon-cost').innerText = nextWeapon.cost;
+                btnWeapon.disabled = gameState.coins < nextWeapon.cost;
+            }
+
+            // Territorium Uitbreiding 1
+            const btnExpand = document.getElementById('buy-expansion');
+            if (gameState.parkExpanded) {
+                btnExpand.disabled = true;
+                btnExpand.innerText = "AL GEBREID";
+                btnExpand.className = "w-full py-2.5 px-4 bg-slate-800 text-slate-500 font-bold text-xs rounded-xl flex items-center justify-center cursor-not-allowed";
+                document.getElementById('shop-expand-status').innerText = "Groot (40 Bezoekers)";
+            } else {
+                btnExpand.disabled = gameState.coins < 300;
+            }
+
+            // Territorium Uitbreiding 2 (Mega Park)
+            const btnExpand2 = document.getElementById('buy-expansion-2');
+            const statusExpand2 = document.getElementById('shop-mega-expand-status');
+            if (gameState.parkMegaExpanded) {
+                btnExpand2.disabled = true;
+                btnExpand2.innerText = "AL MEGAGROOT";
+                btnExpand2.className = "w-full py-2.5 px-4 bg-slate-800 text-slate-500 font-bold text-xs rounded-xl flex items-center justify-center cursor-not-allowed";
+                statusExpand2.innerText = "Megagroot (60 Bezoekers)";
+                statusExpand2.className = "text-xs text-purple-400 font-semibold";
+            } else if (!gameState.parkExpanded) {
+                btnExpand2.disabled = true;
+                btnExpand2.innerText = "VEREIST UITBREIDING 1";
+                statusExpand2.innerText = "Vergrendeld";
+                statusExpand2.className = "text-xs text-rose-500 font-semibold";
+            } else {
+                btnExpand2.disabled = gameState.coins < 600;
+                statusExpand2.innerText = "Beschikbaar";
+                statusExpand2.className = "text-xs text-emerald-400 font-semibold";
+            }
+
+            // Snelle Zwemvliezen Button
+            const btnFlippers = document.getElementById('buy-flippers');
+            if (gameState.flippersBought) {
+                btnFlippers.disabled = true;
+                btnFlippers.querySelector('.btn-text').innerText = "AL UITGERUST";
+                btnFlippers.className = "w-full py-2.5 px-4 bg-slate-800 text-slate-500 font-bold text-xs rounded-xl flex items-center justify-center cursor-not-allowed";
+            } else {
+                btnFlippers.disabled = gameState.coins < 120;
+            }
+
+            // Golfslagmachine Button
+            const btnWave = document.getElementById('buy-wave-machine');
+            if (gameState.waveMachineBought) {
+                btnWave.disabled = true;
+                btnWave.querySelector('.btn-text').innerText = "MACHINE ACTIEF";
+                btnWave.className = "w-full py-2.5 px-4 bg-slate-800 text-slate-500 font-bold text-xs rounded-xl flex items-center justify-center cursor-not-allowed";
+            } else {
+                btnWave.disabled = gameState.coins < 220;
+            }
+
+            // Limonadefontein Button
+            const btnSoda = document.getElementById('buy-soda-fountain');
+            if (gameState.sodaFountainBought) {
+                btnSoda.disabled = true;
+                btnSoda.querySelector('.btn-text').innerText = "FONTEIN GEBOUWD";
+                btnSoda.className = "w-full py-2.5 px-4 bg-slate-800 text-slate-500 font-bold text-xs rounded-xl flex items-center justify-center cursor-not-allowed";
+            } else {
+                btnSoda.disabled = gameState.coins < 140;
+            }
+        }
+
+        // Live Log berichten toevoegen
+        function addLogMessage(msg) {
+            const container = document.getElementById('log-container');
+            const item = document.createElement('div');
+            item.innerText = msg;
+            container.appendChild(item);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // Systeem notificatie pop-up triggeren
+        function showNotification(text) {
+            const box = document.getElementById('notification-box');
+            document.getElementById('notification-text').innerText = text;
+            box.style.transform = "translateX(0)";
+            
+            setTimeout(() => {
+                box.style.transform = "translateX(-110%)";
+            }, 3500);
+        }
+
+        // HUD Waardes bijwerken
+        function updateHUD() {
+            document.getElementById('stat-coins').innerText = gameState.coins;
+            document.getElementById('stat-visitors').innerText = visitors.length + " / " + gameState.maxVisitors;
+
+            // Bereken verwacht dagelijks inkomen
+            let estIncome = visitors.length * 50; // €50 basistarief per bezoeker
+            if (gameState.waveMachineBought) estIncome += 80;
+            if (gameState.sodaFountainBought) estIncome += 40;
+            if (gameState.slidesBought.purple) estIncome += 100;
+            if (gameState.slidesBought.blue) estIncome += 150;
+            
+            document.getElementById('stat-income').innerText = "€" + estIncome;
+        }
+
+        // Window resize handler
+        function onWindowResize() {
+            const container = document.getElementById('canvas-container');
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        }
+
+        // Start 3D Wereld bij laden pagina
+        window.onload = function() {
+            init3D();
+            animate();
+            // Indien cloud-data eerder beschikbaar is, direct herstellen
+            if (typeof window.applyLoadedStateToWorld === 'function') {
+                window.applyLoadedStateToWorld();
+            }
+        };
+    </script>
+
+    <!-- FIREBASE CLOUD SAVE INTEGRATION -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Veilig inladen van sandbox-omgevingsvariabelen
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'waterpark-sim-default';
+        const hasFirebase = typeof __firebase_config !== 'undefined';
+        
+        let db = null;
+        let auth = null;
+        let currentUserId = null;
+
+        if (hasFirebase) {
+            try {
+                const firebaseConfig = JSON.parse(__firebase_config);
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                
+                const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : undefined;
+                
+                const authenticate = async () => {
+                    updateCloudStatus("Verbinden...");
+                    try {
+                        if (initialAuthToken) {
+                            await signInWithCustomToken(auth, initialAuthToken);
+                        } else {
+                            await signInAnonymously(auth);
+                        }
+                    } catch (err) {
+                        console.warn("Custom token auth mislukt, fallback naar anoniem:", err);
+                        await signInAnonymously(auth);
+                    }
+                };
+
+                // Detecteer actieve gebruiker en haal eventuele savegames op
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        currentUserId = user.uid;
+                        updateCloudStatus("Laden...");
+                        await loadGameFromCloud();
+                    } else {
+                        currentUserId = null;
+                        updateCloudStatus("Niet verbonden");
+                    }
+                });
+
+                // Start de authenticatieloop
+                authenticate();
+            } catch (e) {
+                console.error("Firebase initialisatie mislukt:", e);
+                updateCloudStatus("Verbindingsfout");
+            }
+        } else {
+            updateCloudStatus("Offline modus");
+        }
+
+        function updateCloudStatus(statusText) {
+            const el = document.getElementById('cloud-status');
+            if (el) el.innerText = statusText;
+        }
+
+        // Handmatige/Automatische opslaglogica
+        async function saveGameToCloud() {
+            if (!db || !currentUserId) {
+                console.warn("Database of gebruiker niet geauthenticeerd.");
+                return;
+            }
+            updateCloudStatus("Opslaan...");
+            try {
+                // STRICT PATH RULE 1: /artifacts/{appId}/users/{userId}/{collectionName}/{documentId}
+                const docRef = doc(db, 'artifacts', appId, 'users', currentUserId, 'saves', 'currentSave');
+                await setDoc(docRef, {
+                    gameState: JSON.parse(JSON.stringify(window.gameState)),
+                    savedAt: new Date().toISOString()
+                });
+                updateCloudStatus("Opgeslagen!");
+                setTimeout(() => { updateCloudStatus("Gesynchroniseerd"); }, 3000);
+            } catch (error) {
+                console.error("Fout tijdens het opslaan:", error);
+                updateCloudStatus("Fout bij opslaan");
+            }
+        }
+
+        // Voortgang herstellen uit de Cloud database
+        async function loadGameFromCloud() {
+            if (!db || !currentUserId) return;
+            try {
+                const docRef = doc(db, 'artifacts', appId, 'users', currentUserId, 'saves', 'currentSave');
+                const docSnap = await getDoc(docRef);
+                
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    if (data && data.gameState) {
+                        // Kopieer opgeslagen staat over naar actieve game state
+                        Object.assign(window.gameState, data.gameState);
+                        updateCloudStatus("Gesynchroniseerd");
+                        
+                        // Direct herstellen in de lopende 3D wereld
+                        if (typeof window.applyLoadedStateToWorld === 'function') {
+                            window.applyLoadedStateToWorld();
+                        }
+                        if (typeof window.addLogMessage === 'function') {
+                            window.addLogMessage("☁️ Voortgang succesvol hersteld uit de cloud!");
+                        }
+                        if (typeof window.showNotification === 'function') {
+                            window.showNotification("☁️ Voortgang hersteld uit de cloud!");
+                        }
+                    }
+                } else {
+                    updateCloudStatus("Nieuwe start");
+                }
+            } catch (error) {
+                console.error("Fout tijdens het laden:", error);
+                updateCloudStatus("Fout bij laden");
+            }
+        }
+
+        // Exposeer functies globaal aan de hoofd-engine
+        window.saveGameToCloud = saveGameToCloud;
+        window.loadGameFromCloud = loadGameFromCloud;
+    </script>
+</body>
+</html>

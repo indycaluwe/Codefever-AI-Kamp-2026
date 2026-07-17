@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>De Piratenschat</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts voor een piratensfeer -->
+    <link href="https://fonts.googleapis.com/css2?family=Pirata+One&family=Crimson+Pro:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <style>
+        .font-pirate {
+            font-family: 'Pirata One', cursive;
+        }
+        .font-story {
+            font-family: 'Crimson Pro', serif;
+        }
+        /* Custom scrollbar voor retro text-box look */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(217, 119, 6, 0.6);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(217, 119, 6, 0.8);
+        }
+        /* Rustige animatie voor zwevende elementen */
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        .animate-float {
+            animation: float 4s ease-in-out infinite;
+        }
+        /* Water animatie */
+        @keyframes wave {
+            0%, 100% { transform: translateX(0) scaleY(1); }
+            50% { transform: translateX(-2%) scaleY(1.05); }
+        }
+        .animate-wave {
+            animation: wave 8s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-amber-50 min-h-screen flex flex-col justify-between overflow-x-hidden font-story selection:bg-amber-700 selection:text-white">
+
+    <!-- Geluidselement voor achtergrondmuziek -->
+    <audio id="bg-music" src="De Zee van Stille Schreeuwen (1).mp3" loop></audio>
+
+    <!-- Header met titel -->
+    <header class="border-b border-amber-900/40 bg-slate-900/80 backdrop-blur-md py-4 px-6 sticky top-0 z-50">
+        <div class="max-w-4xl mx-auto flex justify-between items-center">
+            <h1 class="text-3xl md:text-4xl font-pirate tracking-wider text-amber-500 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] animate-pulse">
+                ☠️ De Piratenschat
+            </h1>
+            <div class="flex items-center gap-4">
+                <span id="game-status" class="text-xs md:text-sm bg-amber-950/80 text-amber-400 border border-amber-800/60 px-3 py-1 rounded-full font-mono">
+                    Hoofdstuk 1: Het Piratenschip
+                </span>
+                <button onclick="toggleMute()" id="mute-btn" class="text-amber-400 hover:text-amber-300 transition text-lg" title="Geluid aan/uit">
+                    🔊
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hoofdcontainer voor het verhaal -->
+    <main class="flex-grow flex items-center justify-center p-4 md:p-8">
+        <div class="w-full max-w-4xl bg-slate-900/95 border-2 border-amber-900/60 rounded-2xl shadow-2xl overflow-hidden flex flex-col md:flex-row min-h-[500px]">
+            
+            <!-- Visuele kant (Illustratie / Puzzel / Minigame) -->
+            <div class="w-full md:w-1/2 bg-slate-950 relative border-b md:border-b-0 md:border-r border-amber-900/40 flex items-center justify-center p-6 min-h-[280px] md:min-h-0">
+                
+                <!-- Achtergrond sfeerlicht -->
+                <div class="absolute inset-0 bg-gradient-to-b from-amber-500/5 via-transparent to-black pointer-events-none"></div>
+
+                <!-- Dynamische SVG schermen gebaseerd op de game state -->
+                <div id="visual-container" class="w-full h-full flex items-center justify-center">
+                    <!-- Wordt dynamisch gevuld met JS -->
+                </div>
+            </div>
+
+            <!-- Interactieve Verhaallijn kant -->
+            <div class="w-full md:w-1/2 p-6 md:p-8 flex flex-col justify-between h-[450px] md:h-[550px]">
+                
+                <!-- Tekstgedeelte met scroll -->
+                <div class="overflow-y-auto pr-2 flex-grow mb-6">
+                    <p id="story-text" class="text-lg md:text-xl leading-relaxed text-slate-300 transition-opacity duration-300">
+                        Laat het avontuur beginnen...
+                    </p>
+                </div>
+
+                <!-- Keuzes / Interactie knoppen -->
+                <div id="action-panel" class="space-y-3">
+                    <!-- Knoppen verschijnen hier dynamisch -->
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Zoom Modal voor de schatkaart -->
+    <div id="zoom-modal" class="fixed inset-0 bg-black/95 backdrop-blur-md z-50 hidden flex flex-col items-center justify-center p-4" onclick="closeZoom()">
+        <div class="relative max-w-4xl w-full flex flex-col items-center">
+            <img id="zoomed-image" src="" alt="Ingezoomde Schatkaart" class="max-w-full max-h-[80vh] rounded-xl border-4 border-amber-500 shadow-2xl object-contain">
+            <p class="text-amber-400 mt-4 text-sm md:text-base font-semibold font-mono bg-amber-950/80 px-4 py-2 rounded-full border border-amber-800/60 shadow-lg animate-pulse">
+                ✕ Klik ergens om te sluiten
+            </p>
+        </div>
+    </div>
+
+    <!-- Custom Popups / Feedback Boxen -->
+    <div id="alert-box" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border-2 border-amber-500 max-w-md w-full p-6 rounded-xl shadow-2xl text-center">
+            <h3 id="alert-title" class="text-2xl font-pirate text-amber-500 mb-2">Melding</h3>
+            <p id="alert-message" class="text-slate-300 mb-6">Inhoud van de melding...</p>
+            <button onclick="closeAlert()" class="bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold px-6 py-2 rounded-lg transition-colors">
+                Begrepen!
+            </button>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="border-t border-amber-900/40 bg-slate-950 py-3 text-center text-xs text-slate-500">
+        <p>Gemaakt voor dappere avonturiers. Los alle puzzels op en breng de schat veilig naar de president!</p>
+    </footer>
+
+    <!-- Game Logic -->
+    <script>
+        // --- GELUIDSSYSTEEM (Web Audio API & Achtergrondmuziek) ---
+        let audioCtx = null;
+        let isMuted = false;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        // Start muziek bij de allereerste interactie om browser-restricties te omzeilen
+        function startMusic() {
+            const bgMusic = document.getElementById('bg-music');
+            if (bgMusic && bgMusic.paused && !isMuted) {
+                bgMusic.play().catch(e => console.log("Muziek kon nog niet starten:", e));
+            }
+        }
+        document.addEventListener('click', startMusic, { once: true });
+        document.addEventListener('touchstart', startMusic, { once: true });
+
+        function playSound(type) {
+            if (isMuted) return;
+            initAudio();
+            if (!audioCtx) return;
+
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            const now = audioCtx.currentTime;
+
+            if (type === 'click') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(450, now);
+                osc.frequency.exponentialRampToValueAtTime(150, now + 0.1);
+                gain.gain.setValueAtTime(0.1, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                osc.start(now);
+                osc.stop(now + 0.1);
+            } else if (type === 'splash') {
+                const bufferSize = audioCtx.sampleRate * 0.4;
+                const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = Math.random() * 2 - 1;
+                }
+                const noise = audioCtx.createBufferSource();
+                noise.buffer = buffer;
+                const filter = audioCtx.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(1000, now);
+                filter.frequency.exponentialRampToValueAtTime(100, now + 0.4);
+                
+                const noiseGain = audioCtx.createGain();
+                noiseGain.gain.setValueAtTime(0.3, now);
+                noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+
+                noise.connect(filter);
+                filter.connect(noiseGain);
+                noiseGain.connect(audioCtx.destination);
+                noise.start(now);
+                noise.stop(now + 0.4);
+            } else if (type === 'unlock') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(261.63, now); // C4
+                osc.frequency.setValueAtTime(329.63, now + 0.1); // E4
+                osc.frequency.setValueAtTime(392.00, now + 0.2); // G4
+                osc.frequency.setValueAtTime(523.25, now + 0.3); // C5
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+                osc.start(now);
+                osc.stop(now + 0.5);
+            } else if (type === 'fail') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(150, now);
+                osc.frequency.exponentialRampToValueAtTime(80, now + 0.3);
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                osc.start(now);
+                osc.stop(now + 0.3);
+            } else if (type === 'chime') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(600, now);
+                osc.frequency.exponentialRampToValueAtTime(1200, now + 0.25);
+                gain.gain.setValueAtTime(0.1, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+                osc.start(now);
+                osc.stop(now + 0.25);
+            }
+        }
+
+        function toggleMute() {
+            const bgMusic = document.getElementById('bg-music');
+            isMuted = !isMuted;
+            if (bgMusic) {
+                bgMusic.muted = isMuted;
+                if (!isMuted && bgMusic.paused) {
+                    bgMusic.play().catch(e => console.log("Muziek kon niet starten:", e));
+                }
+            }
+            document.getElementById('mute-btn').innerText = isMuted ? '🔇' : '🔊';
+        }
+
+        // --- CUSTOM ALERTS ---
+        function showAlert(title, message) {
+            document.getElementById('alert-title').innerText = title;
+            document.getElementById('alert-message').innerText = message;
+            document.getElementById('alert-box').classList.remove('hidden');
+        }
+
+        // --- HANDIGE ZOOM HOOKS ---
+        function closeAlert() {
+            document.getElementById('alert-box').classList.add('hidden');
+            playSound('click');
+        }
+
+        // --- ZOOM KAART OPTIES ---
+        function zoomImage(src) {
+            const modal = document.getElementById('zoom-modal');
+            const zoomedImg = document.getElementById('zoomed-image');
+            if (modal && zoomedImg) {
+                zoomedImg.src = src;
+                modal.classList.remove('hidden');
+                playSound('chime');
+            }
+        }
+
+        function closeZoom() {
+            const modal = document.getElementById('zoom-modal');
+            if (modal) {
+                modal.classList.add('hidden');
+                playSound('click');
+            }
+        }
+
+
+        // --- GAME ENGINE, PUZZELS & STATES ---
+        let currentScene = 'intro';
+        let keySequence = []; // Voor de cijfersloten
+        let gemSequence = []; // Voor de juwelenpuzzel
+        let routeStep = 0; // Voor de routekaart checkpoints
+        let basementHintsFound = { schilderij: false, krat: false, spin: false };
+
+        // SVGs en layouts voor de scènes
+        const SVGS = {
+            ship: `
+                <svg viewBox="0 0 200 200" class="w-48 h-48 md:w-64 md:h-64 animate-float">
+                    <path d="M0 160 Q 50 150, 100 160 T 200 160 L 200 200 L 0 200 Z" fill="#0f172a" class="animate-wave"/>
+                    <path d="M30 130 C 50 160, 150 160, 170 130 L 155 105 L 45 105 Z" fill="#78350f" stroke="#451a03" stroke-width="2"/>
+                    <rect x="95" y="40" width="10" height="70" fill="#451a03"/>
+                    <rect x="105" y="45" width="45" height="30" fill="#000"/>
+                    <circle cx="127" cy="55" r="5" fill="#fff"/>
+                    <line x1="117" y1="52" x2="137" y2="62" stroke="#fff" stroke-width="2"/>
+                    <line x1="137" y1="52" x2="117" y2="62" stroke="#fff" stroke-width="2"/>
+                    <circle cx="65" cy="125" r="4" fill="#fbbf24"/>
+                    <circle cx="100" cy="125" r="4" fill="#fbbf24"/>
+                    <circle cx="135" cy="125" r="4" fill="#fbbf24"/>
+                </svg>
+            `,
+            ocean: `
+                <svg viewBox="0 0 200 200" class="w-48 h-48 md:w-64 md:h-64">
+                    <defs>
+                        <linearGradient id="oceanGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" stop-color="#0284c7" />
+                            <stop offset="100%" stop-color="#0f172a" />
+                        </linearGradient>
+                    </defs>
+                    <rect width="200" height="200" fill="url(#oceanGrad)"/>
+                    <circle cx="50" cy="120" r="3" fill="rgba(255,255,255,0.4)"/>
+                    <circle cx="140" cy="80" r="5" fill="rgba(255,255,255,0.3)"/>
+                    <circle cx="150" cy="150" r="2" fill="rgba(255,255,255,0.5)"/>
+                    
+                    <g transform="translate(65, 110)" class="animate-float">
+                        <path d="M10 30 L 60 30 L 60 60 L 10 60 Z" fill="#d97706" stroke="#451a03" stroke-width="2"/>
+                        <path d="M10 30 Q 35 10, 60 30 Z" fill="#b45309" stroke="#451a03" stroke-width="2"/>
+                        <rect x="18" y="15" width="6" height="45" fill="#475569"/>
+                        <rect x="46" y="15" width="6" height="45" fill="#475569"/>
+                        <circle cx="35" cy="38" r="4" fill="#000"/>
+                        <rect x="34" y="38" width="2" height="7" fill="#000"/>
+                        <circle cx="35" cy="15" r="25" fill="#fef08a" opacity="0.15" />
+                    </g>
+
+                    <g transform="translate(90, 30)">
+                        <circle cx="10" cy="10" r="6" fill="#fbcfe8"/>
+                        <line x1="10" y1="16" x2="10" y2="35" stroke="#fbcfe8" stroke-width="3"/>
+                        <line x1="10" y1="22" x2="0" y2="10" stroke="#fbcfe8" stroke-width="2"/>
+                        <line x1="10" y1="22" x2="20" y2="10" stroke="#fbcfe8" stroke-width="2"/>
+                        <line x1="10" y1="35" x2="5" y2="50" stroke="#fbcfe8" stroke-width="2"/>
+                        <line x1="10" y1="35" x2="15" y2="50" stroke="#fbcfe8" stroke-width="2"/>
+                    </g>
+                </svg>
+            `,
+            gems: `
+                <svg viewBox="0 0 200 200" class="w-48 h-48 md:w-64 md:h-64">
+                    <rect width="200" height="200" fill="#0f172a" rx="15" stroke="#334155" stroke-width="3"/>
+                    
+                    <rect x="20" y="40" width="160" height="120" fill="#78350f" rx="10" stroke="#451a03" stroke-width="4"/>
+                    <rect x="20" y="40" width="160" height="25" fill="#b45309" rx="5"/>
+                    <rect x="90" y="30" width="20" height="35" fill="#475569" rx="2"/>
+                    <circle cx="100" cy="48" r="4" fill="#fbbf24"/>
+
+                    <!-- Klikbare Edelstenen met visuele interactiegloed -->
+                    <!-- Rood (Vurig) -->
+                    <g onclick="clickGem('Rood')" class="cursor-pointer group">
+                        <circle id="glow-Rood" cx="65" cy="90" r="18" fill="none" stroke="#ef4444" stroke-width="0" class="transition-all duration-300"/>
+                        <polygon points="50,90 65,70 80,90 65,110" fill="#ef4444" stroke="#b91c1c" stroke-width="2" class="group-hover:scale-110 origin-center transition-transform"/>
+                        <text x="65" y="125" font-family="sans-serif" font-weight="bold" font-size="10" fill="#fca5a5" text-anchor="middle">ROOD</text>
+                    </g>
+
+                    <!-- Blauw (Diepe Zee) -->
+                    <g onclick="clickGem('Blauw')" class="cursor-pointer group">
+                        <circle id="glow-Blauw" cx="115" cy="90" r="18" fill="none" stroke="#3b82f6" stroke-width="0" class="transition-all duration-300"/>
+                        <polygon points="100,90 115,70 130,90 115,110" fill="#3b82f6" stroke="#1d4ed8" stroke-width="2" class="group-hover:scale-110 origin-center transition-transform"/>
+                        <text x="115" y="125" font-family="sans-serif" font-weight="bold" font-size="10" fill="#93c5fd" text-anchor="middle">BLAUW</text>
+                    </g>
+
+                    <!-- Groen (Fris Gras) -->
+                    <g onclick="clickGem('Groen')" class="cursor-pointer group">
+                        <circle id="glow-Groen" cx="165" cy="90" r="18" fill="none" stroke="#10b981" stroke-width="0" class="transition-all duration-300"/>
+                        <polygon points="150,90 165,70 180,90 165,110" fill="#10b981" stroke="#047857" stroke-width="2" class="group-hover:scale-110 origin-center transition-transform"/>
+                        <text x="165" y="125" font-family="sans-serif" font-weight="bold" font-size="10" fill="#6ee7b7" text-anchor="middle">GROEN</text>
+                    </g>
+
+                    <text x="100" y="155" font-family="sans-serif" font-size="9" fill="#f59e0b" text-anchor="middle" opacity="0.8">Klik op de edelstenen in de juiste volgorde!</text>
+                </svg>
+            `,
+            fatman: `
+                <svg viewBox="0 0 200 200" class="w-48 h-48 md:w-64 md:h-64">
+                    <rect width="200" height="200" fill="#1e293b"/>
+                    <g transform="translate(50, 20)">
+                        <circle cx="50" cy="110" r="45" fill="#3b82f6" stroke="#1d4ed8" stroke-width="3"/>
+                        <circle cx="50" cy="45" r="20" fill="#fbcfe8" stroke="#db2777" stroke-width="2"/>
+                        <circle cx="43" cy="42" r="2.5" fill="#000"/>
+                        <circle cx="57" cy="42" r="2.5" fill="#000"/>
+                        <path d="M 40 53 Q 50 45, 60 53" stroke="#000" stroke-width="2" fill="none"/>
+                        <path d="M 25 30 L 75 30 L 65 10 L 35 10 Z" fill="#0f172a"/>
+                        <path d="M 8 100 Q -10 90, 10 70" stroke="#fbcfe8" stroke-width="8" stroke-linecap="round" fill="none"/>
+                        <path d="M 92 100 Q 112 90, 90 70" stroke="#fbcfe8" stroke-width="8" stroke-linecap="round" fill="none"/>
+                        <circle cx="-10" cy="90" r="8" fill="none" stroke="#fbbf24" stroke-width="2"/>
+                        <rect x="-14" y="94" width="4" height="12" fill="#fbbf24"/>
+                    </g>
+                </svg>
+            `,
+            basement: `
+                <svg viewBox="0 0 200 200" class="w-48 h-48 md:w-64 md:h-64">
+                    <rect width="200" height="200" fill="#18181b"/>
+                    <line x1="0" y1="50" x2="200" y2="50" stroke="#27272a" stroke-width="2"/>
+                    <line x1="0" y1="110" x2="200" y2="110" stroke="#27272a" stroke-width="2"/>
+                    <line x1="0" y1="160" x2="200" y2="160" stroke="#27272a" stroke-width="2"/>
+                    <line x1="50" y1="0" x2="50" y2="50" stroke="#27272a" stroke-width="2"/>
+                    <line x1="140" y1="50" x2="140" y2="110" stroke="#27272a" stroke-width="2"/>
+                    <line x1="70" y1="110" x2="70" y2="160" stroke="#27272a" stroke-width="2"/>
+
+                    <!-- Klikbare hints met oplicht-effect als ze gevonden zijn -->
+                    <!-- 1. Oud Schilderij aan de muur (Eerste getal is 4) -->
+                    <g id="svg-hint-schilderij" onclick="clickHint('schilderij')" class="cursor-pointer group">
+                        <rect x="20" y="65" width="35" height="25" fill="#451a03" stroke="#f59e0b" stroke-width="1.5" class="group-hover:stroke-amber-400 transition-all duration-300"/>
+                        <rect x="24" y="69" width="27" height="17" fill="#064e3b"/>
+                        <path d="M 38 72 L 30 82 L 42 82 Z" fill="#fef08a"/>
+                        <line x1="38" y1="72" x2="38" y2="84" stroke="#fff" stroke-width="1.5"/>
+                    </g>
+
+                    <!-- 2. Houten krat in de hoek (Tweede getal is 8) -->
+                    <g id="svg-hint-krat" onclick="clickHint('krat')" class="cursor-pointer group" transform="translate(140, 120)">
+                        <rect x="0" y="0" width="40" height="40" fill="#78350f" stroke="#451a03" stroke-width="2" class="group-hover:stroke-amber-400 transition-all duration-300"/>
+                        <line x1="0" y1="0" x2="40" y2="40" stroke="#451a03" stroke-width="1.5"/>
+                        <line x1="40" y1="0" x2="0" y2="40" stroke="#451a03" stroke-width="1.5"/>
+                        <text x="10" y="25" font-family="monospace" font-size="8" fill="#f59e0b" opacity="0.6">VIII</text>
+                    </g>
+
+                    <!-- 3. Griezelige spin met haar poten (Derde getal is 6) -->
+                    <g id="svg-hint-spin" onclick="clickHint('spin')" class="cursor-pointer group" transform="translate(110, 25)">
+                        <path d="M 0 0 L 30 30 M 0 15 Q 15 15, 15 0" stroke="#4b5563" stroke-width="1" fill="none"/>
+                        <circle cx="20" cy="20" r="4" fill="#000" class="group-hover:fill-amber-500 transition-all duration-300"/>
+                        <path d="M 20 20 Q 10 15, 5 20 M 20 20 Q 10 20, 5 25 M 20 20 Q 10 25, 8 30" stroke="#000" stroke-width="1" fill="none"/>
+                        <path d="M 20 20 Q 30 15, 35 20 M 20 20 Q 30 20, 35 25 M 20 20 Q 30 25, 32 30" stroke="#000" stroke-width="1" fill="none"/>
+                    </g>
+
+                    <g transform="translate(100, 0)">
+                        <line x1="0" y1="0" x2="0" y2="30" stroke="#94a3b8" stroke-width="2"/>
+                        <circle cx="0" cy="35" r="8" fill="#fef08a" opacity="0.8" class="animate-pulse"/>
+                    </g>
+                </svg>
+            `,
+            swimming: `
+                <svg viewBox="0 0 200 200" class="w-48 h-48 md:w-64 md:h-64">
+                    <defs>
+                        <linearGradient id="swimGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" stop-color="#38bdf8" />
+                            <stop offset="100%" stop-color="#0369a1" />
+                        </linearGradient>
+                    </defs>
+                    <rect width="200" height="200" fill="url(#swimGrad)"/>
+                    <circle cx="100" cy="120" r="4" fill="rgba(255,255,255,0.6)" class="animate-bounce"/>
+                    <circle cx="90" cy="70" r="6" fill="rgba(255,255,255,0.5)"/>
+                    <circle cx="115" cy="40" r="3" fill="rgba(255,255,255,0.7)"/>
+
+                    <g transform="translate(75, 80)" class="animate-float">
+                        <circle cx="25" cy="20" r="8" fill="#fbcfe8"/>
+                        <path d="M 25 28 C 15 35, 35 35, 25 55" stroke="#fbcfe8" stroke-width="4" stroke-linecap="round" fill="none"/>
+                        <path d="M 25 35 Q 45 25, 40 10" stroke="#fbcfe8" stroke-width="3" stroke-linecap="round" fill="none"/>
+                        <path d="M 25 35 Q 5 25, 10 10" stroke="#fbcfe8" stroke-width="3" stroke-linecap="round" fill="none"/>
+                        <rect x="10" y="50" width="30" height="20" fill="#d97706" rx="2"/>
+                        <rect x="18" y="50" width="4" height="20" fill="#4b5563"/>
+                    </g>
+                    <polygon points="60,0 140,0 170,50 30,50" fill="#e0f2fe" opacity="0.2"/>
+                </svg>
+            `,
+            map: `
+                <svg viewBox="0 0 200 200" class="w-48 h-48 md:w-64 md:h-64">
+                    <!-- Perkamenten achtergrond -->
+                    <rect width="200" height="200" fill="#fef3c7" rx="10" stroke="#b45309" stroke-width="3"/>
+                    <path d="M10 10 L190 10 L190 190 L10 190 Z" fill="none" stroke="#d97706" stroke-width="1" stroke-dasharray="4,4"/>
+                    
+                    <!-- Decoratieve Rivier -->
+                    <path d="M 30 180 Q 80 150, 100 100 T 150 20" fill="none" stroke="#38bdf8" stroke-width="4" opacity="0.4"/>
+                    
+                    <!-- Dynamische Route Verbindingslijnen -->
+                    <path id="route-path-1" d="M 54 140 L 96 100" fill="none" stroke="#78350f" stroke-width="2" stroke-dasharray="4,4" opacity="0.5" class="transition-all duration-500"/>
+                    <path id="route-path-2" d="M 124 80 L 136 54" fill="none" stroke="#78350f" stroke-width="2" stroke-dasharray="4,4" opacity="0.5" class="transition-all duration-500"/>
+
+                    <!-- Checkpoint 1: Het Strand (S) -->
+                    <g id="map-cp-1" onclick="clickMapCheckpoint(1)" class="cursor-pointer group">
+                        <circle id="circle-cp-1" cx="40" cy="150" r="14" fill="#d97706" class="group-hover:fill-amber-500 transition-colors duration-300" stroke="#451a03" stroke-width="1"/>
+                        <text x="40" y="14" font-family="sans-serif" font-size="10" fill="#fff" font-weight="bold" text-anchor="middle" transform="translate(0, 140)">🏝️</text>
+                        <text x="40" y="175" font-family="sans-serif" font-size="8" font-weight="bold" fill="#78350f" text-anchor="middle">1. Strand</text>
+                    </g>
+
+                    <!-- Checkpoint 2: Het Gevaarlijke Piratenschip (Verkeerd pad) -->
+                    <g onclick="clickMapCheckpoint('wrong-ship')" class="cursor-pointer group">
+                        <circle cx="100" cy="140" r="12" fill="#991b1b" class="group-hover:fill-red-500 transition-colors duration-300"/>
+                        <text x="100" y="144" font-family="sans-serif" font-size="9" fill="#fff" font-weight="bold" text-anchor="middle">🏴‍☠️</text>
+                    </g>
+
+                    <!-- Checkpoint 3: Bloemenbos (Vluchtroute) -->
+                    <g id="map-cp-2" onclick="clickMapCheckpoint(2)" class="cursor-pointer group opacity-40 transition-opacity duration-300">
+                        <circle id="circle-cp-2" cx="110" cy="90" r="14" fill="#059669" class="group-hover:fill-emerald-500 transition-colors duration-300" stroke="#047857" stroke-width="1"/>
+                        <text x="110" y="14" font-family="sans-serif" font-size="10" fill="#fff" font-weight="bold" text-anchor="middle" transform="translate(0, 80)">🌸</text>
+                        <text x="110" y="115" font-family="sans-serif" font-size="8" font-weight="bold" fill="#78350f" text-anchor="middle">2. Bos</text>
+                    </g>
+
+                    <!-- Checkpoint 4: Het Moeras (Verkeerd pad) -->
+                    <g onclick="clickMapCheckpoint('wrong-swamp')" class="cursor-pointer group">
+                        <circle cx="50" cy="80" r="12" fill="#991b1b" class="group-hover:fill-red-500 transition-colors duration-300"/>
+                        <text x="50" y="84" font-family="sans-serif" font-size="9" fill="#fff" font-weight="bold" text-anchor="middle">🐊</text>
+                    </g>
+
+                    <!-- Checkpoint 5: Het Presidentieel Paleis (Finish) -->
+                    <g id="map-cp-3" onclick="clickMapCheckpoint(3)" class="cursor-pointer group opacity-40 transition-opacity duration-300">
+                        <circle id="circle-cp-3" cx="150" cy="40" r="14" fill="#3b82f6" class="group-hover:fill-blue-500 transition-colors duration-300" stroke="#1d4ed8" stroke-width="1"/>
+                        <text x="150" y="14" font-family="sans-serif" font-size="10" fill="#fff" font-weight="bold" text-anchor="middle" transform="translate(0, 30)">👑</text>
+                        <text x="150" y="65" font-family="sans-serif" font-size="8" font-weight="bold" fill="#78350f" text-anchor="middle">3. Paleis</text>
+                    </g>
+                </svg>
+            `,
+            gatekeeper: `
+                <svg viewBox="0 0 200 200" class="w-48 h-48 md:w-64 md:h-64">
+                    <!-- Paleismuur en Gouden Hek -->
+                    <rect width="200" height="200" fill="#1e293b"/>
+                    <rect x="0" y="140" width="200" height="60" fill="#475569"/>
+                    
+                    <!-- Gouden poort spijlen -->
+                    <g stroke="#eab308" stroke-width="4">
+                        <line x1="20" y1="20" x2="20" y2="140"/>
+                        <line x1="50" y1="20" x2="50" y2="140"/>
+                        <line x1="80" y1="20" x2="80" y2="140"/>
+                        <line x1="120" y1="20" x2="120" y2="140"/>
+                        <line x1="150" y1="20" x2="150" y2="140"/>
+                        <line x1="180" y1="20" x2="180" y2="140"/>
+                        <!-- Horizontale balken -->
+                        <line x1="10" y1="40" x2="190" y2="40" stroke-width="3"/>
+                        <line x1="10" y1="120" x2="190" y2="120" stroke-width="3"/>
+                    </g>
+
+                    <!-- Poortwachter Huisje -->
+                    <rect x="130" y="60" width="50" height="90" fill="#0f172a" stroke="#334155" stroke-width="2"/>
+                    <polygon points="125,60 155,30 185,60" fill="#991b1b"/>
+
+                    <!-- Poortwachter (Guard) -->
+                    <g transform="translate(50, 55)" class="animate-float">
+                        <!-- Uniform en lichaam -->
+                        <rect x="25" y="45" width="30" height="50" fill="#1d4ed8" rx="5"/>
+                        <!-- Gouden knopen -->
+                        <circle cx="40" cy="55" r="2.5" fill="#eab308"/>
+                        <circle cx="40" cy="67" r="2.5" fill="#eab308"/>
+                        <circle cx="40" cy="79" r="2.5" fill="#eab308"/>
+                        <!-- Hoofd -->
+                        <circle cx="40" cy="30" r="12" fill="#fbcfe8"/>
+                        <!-- Grote Engelse Poortwachter hoed -->
+                        <rect x="26" y="2" width="28" height="20" fill="#000" rx="3"/>
+                        <!-- Ogen en Snor -->
+                        <circle cx="36" cy="28" r="1.5" fill="#000"/>
+                        <circle cx="44" cy="28" r="1.5" fill="#000"/>
+                        <path d="M 33 34 Q 40 37, 47 34" stroke="#000" stroke-width="2" fill="none"/>
+                    </g>
+                </svg>
+            `,
+            president: `
+                <svg viewBox="0 0 200 200" class="w-48 h-48 md:w-64 md:h-64">
+                    <rect width="200" height="200" fill="#0f172a"/>
+                    
+                    <!-- Stoere Piratenvlag i.p.v. Nederlandse Vlag -->
+                    <g transform="translate(20, 15)">
+                        <rect x="0" y="0" width="54" height="34" fill="#000000" rx="2" stroke="#4b5563" stroke-width="1.5"/>
+                        <!-- Gekruiste botten -->
+                        <line x1="8" y1="8" x2="46" y2="26" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round"/>
+                        <line x1="46" y1="8" x2="8" y2="26" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round"/>
+                        <!-- Witte doodskop in het midden -->
+                        <circle cx="27" cy="17" r="7" fill="#ffffff"/>
+                        <!-- Kaakje eronder -->
+                        <rect x="24" y="21" width="6" height="5" fill="#ffffff" rx="1"/>
+                        <!-- Oogkassen -->
+                        <circle cx="25" cy="16" r="1.5" fill="#000000"/>
+                        <circle cx="29" cy="16" r="1.5" fill="#000000"/>
+                    </g>
+                    <!-- Grijze Vlaggenmast -->
+                    <rect x="17" y="15" width="3" height="60" fill="#94a3b8"/>
+
+                    <!-- President achter zijn chique bureau -->
+                    <g transform="translate(100, 50)">
+                        <circle cx="30" cy="30" r="15" fill="#fbcfe8"/>
+                        <path d="M 15 25 Q 30 10, 45 25" fill="#e2e8f0"/>
+                        <path d="M 5 45 L 55 45 L 45 80 L 15 80 Z" fill="#1e293b"/>
+                        <polygon points="30,45 33,65 30,70 27,65" fill="#dc2626"/>
+                        <rect x="-20" y="75" width="100" height="30" fill="#78350f" rx="3"/>
+                        <rect x="15" y="60" width="30" height="18" fill="#d97706" stroke="#fbbf24" stroke-width="1.5" rx="2"/>
+                        <circle cx="30" cy="69" r="2" fill="#000"/>
+                    </g>
+                    <!-- Confetti effecten -->
+                    <circle cx="30" cy="100" r="3" fill="#f43f5e" class="animate-ping"/>
+                    <circle cx="170" cy="80" r="4" fill="#10b981" class="animate-bounce"/>
+                    <circle cx="150" cy="140" r="2.5" fill="#eab308" class="animate-pulse"/>
+                </svg>
+            `
+        };
+
+        // De grote verhaaldatabase
+        const StoryData = {
+            intro: {
+                text: "Je staat op het dek van een gigantisch, krakend piratenschip. De zilte zeewind waait door je haren, maar de sfeer is ijzig. De piraten om je heen kijken niet vriendelijk. Ze hebben ontdekt dat jij de schatkaart hebt opgelost, maar ze zijn niet van plan om de buit met je te delen! 'Overboord met die landrot!' brult de kapitein.",
+                status: "Hoofdstuk 1: Het Piratenschip",
+                svg: SVGS.ship,
+                choices: [
+                    { text: "Probeer te onderhandelen", next: "onderhandelen" },
+                    { text: "Vecht terug met een houten plank", next: "vechten" }
+                ]
+            },
+            onderhandelen: {
+                text: "Je probeert rustig te praten: 'Mannen, ik kan jullie naar nóg meer rijkdom leiden!' Maar de piraten lachen je keihard uit. Twee gespierde zeebonken pakken je bij je armen en tillen je op. Mit een flinke zwaai vlieg je door de lucht... PLONS! Je valt metersdiep de ijskoude oceaan in.",
+                status: "Hoofdstuk 2: De Sprong in het Diepe",
+                svg: SVGS.ocean,
+                choices: [
+                    { text: "Zwem dieper de oceaan in", next: "oceaan_diep", action: () => playSound('splash') }
+                ]
+            },
+            vechten: {
+                text: "Je grijpt een losse houten plank en zwaait hem wild in het rond! Je raakt één piraat op zijn houten poot, maar de overmacht is simpelweg te groot. De kapitein geeft je een harde duw met zijn laars. Je verliest je evenwicht en stort achterover... PLONS! Het koude zeewater sluit zich boven je hoofd.",
+                status: "Hoofdstuk 2: De Sprong in het Diepe",
+                svg: SVGS.ocean,
+                choices: [
+                    { text: "Zwem dieper het duister in", next: "oceaan_diep", action: () => playSound('splash') }
+                ]
+            },
+            oceaan_diep: {
+                text: "Terwijl je naar beneden zakt, zie je plotseling iets glinsteren op de oceaanbodem. Het is een magische, goud-schitterende kist: DE PIRATENSCHAT! Je grijpt hem stevig vast. Maar de kist zit met een zware magische ketting vast aan de bodem. Er drijft een fles rond met een geheimzinnige schatkaart erin!",
+                status: "Hoofdstuk 2: De Schat Gevonden",
+                svg: SVGS.ocean,
+                choices: [
+                    { text: "Bekijk de flessenpost schatkaart", next: "puzzel_zoekplaat" }
+                ]
+            },
+            puzzel_zoekplaat: {
+                text: "Goed, je bent van de plank gegooid het water in... hé, wat is dat?! Een boodschap in een fles! Je doet de fles open en leest de kaart. Het is een echte schatkaart! <br><br>Jij moet helpen om te ontcijferen waar de schat ligt. Kijk goed naar de kaart aan de linkerkant en vind het coördinaat.<br><br><span class='text-amber-400 font-bold'>Belangrijke tip: Geef eerst het cijfer en dan de letter in (bijvoorbeeld '1A')!</span>",
+                status: "Puzzel 1: De Schatkaart Zoekplaat",
+                isZoekplaatPuzzel: true
+            },
+            puzzel_juwelen_intro: {
+                text: "Yes! De kettingen glijden van de schatkist af. Maar er zit nóg een magisch slot op de kist: drie fonkelende edelstenen (Rood, Blauw en Groen) die in de juiste volgorde moeten worden ingedrukt! Een magische stem klinkt door het water:<br><br><span class='text-amber-400 font-bold italic'>'Begin met de koele kleur van de diepe zee. Neem daarna de felle kleur van de vurige zon mee. En eindig met het frisse, zachte gras.'</span>",
+                status: "Puzzel 2: De Magische Edelstenen",
+                svg: SVGS.gems,
+                choices: [
+                    { text: "Kraak de edelstenen-code", next: "puzzel_juwelen" }
+                ]
+            },
+            puzzel_juwelen: {
+                text: "Klik op de edelstenen in de afbeelding om de magische kist te openen!<br><br><span class='text-amber-400 font-bold'>Ingevoerde kleuren:</span><br><div id='gem-status-display' class='text-sm font-mono mt-1 text-slate-300'>Nog geen juwelen ingedrukt...</div>",
+                status: "Puzzel 2: De Magische Edelstenen",
+                svg: SVGS.gems,
+                isJuwelenPuzzel: true
+            },
+            kelder_intro: {
+                text: "Geweldig! De schatkist klikt zachtjes open. Maar net toen je de schat omhoog wilde trekken, greep een gigantische hand je vast! Je bent gevangen genomen door een ontzettend dikke man met een gemene lach. Hij sleurt je mee naar zijn landhuis en gooit je in de ijskoude kelder. 'Die schat is nu van mij!' buldert hij en hij sluit de zware eikenhouten deur met een cijferslot af. Je moet ontsnappen!",
+                status: "Hoofdstuk 3: De Kelder van de Dikke Man",
+                svg: SVGS.fatman,
+                choices: [
+                    { text: "Onderzoek de kelder op hints", next: "kelder_puzzel" }
+                ]
+            },
+            kelder_puzzel: {
+                text: "Klik op de voorwerpen in de kelder-illustratie hiernaast om hints te vinden voor de 3-cijferige code! Voer daarna de code in op het cijferslot om te ontsnappen.<br><br><span class='text-amber-400 font-bold'>Gevonden hints:</span><br>• Schilderij: <span id='hint-1'>?</span><br>• Houten krat: <span id='hint-2'>?</span><br>• Spin: <span id='hint-3'>?</span>",
+                status: "Puzzel 3: Ontsnap uit de Kelder",
+                svg: SVGS.basement,
+                isPuzzel: true
+            },
+            ontsnapt: {
+                text: "KLIK! Het zware cijferslot springt open! Je duwt de kelderdeur open en rent naar buiten. Je zwemt met de zware schat stevig onder je arm geklemd door een verborgen onderwaterkanaal omhoog naar het strand. Je leeft nog! Maar de boeven van het piratenschip hebben je gezien en zitten je op de hielen. Je moet je route naar de president te plannen!",
+                status: "Hoofdstuk 4: De Ontsnapping",
+                svg: SVGS.swimming,
+                choices: [
+                    { text: "Bekijk de kaart voor een veilige route", next: "puzzel_route_intro", action: () => playSound('unlock') }
+                ]
+            },
+            puzzel_route_intro: {
+                text: "Je hebt de perkamenten kaart voor je liggen. Om de boeven en hun vallen te ontwijken, moet je een veilige route uitstippelen naar het presidentieel paleis. Klik op de juiste locaties op de kaart om de route stap voor stap op te bouwen! <br><br><span class='text-amber-400 italic font-bold'>'Start op het zonnige strand, doorkruis daarna het prachtige bloemenbos, en bereik tot slot het chique paleis.'</span>",
+                status: "Puzzel 4: De Interactieve Routekaart",
+                svg: SVGS.map,
+                choices: [
+                    { text: "Start het plannen van de route", next: "puzzel_route" }
+                ]
+            },
+            puzzel_route: {
+                text: "Klik op de juiste ronde checkpoints op de kaart hiernaast in de logische volgorde om een veilige weg te banen!<br><br><span class='text-amber-400 font-bold'>Route voortgang:</span><br><span id='route-status-text' class='text-emerald-400 font-bold'>Zorg dat je begint bij Checkpoint 1 (Strand)...</span>",
+                status: "Puzzel 4: De Interactieve Routekaart",
+                svg: SVGS.map,
+                isRoutePuzzel: true
+            },
+            vlucht_instructie: {
+                text: "Super! Je hebt de perfecte route uitgestippeld. Maar de boeven zijn héél dichtbij! Het is tijd om de vlucht te starten. <br><br>Klik op de knop hieronder om het vlucht-spel op de website te starten. Zodra je de vlucht hebt voltooid, ontvang je een 4-cijferige code. Kom daarna hier terug om de code in te voeren en verder te reizen naar de president!",
+                status: "Hoofdstuk 5: Vlucht voor de Boeven",
+                svg: SVGS.swimming,
+                isVluchtInstructie: true
+            },
+            invoeren_vlucht_code: {
+                text: "Voer hier de 4-cijferige code in die je hebt gekregen na het voltooien van de vlucht op <span class='text-amber-400 underline font-semibold'>wegnaarpresident.lovable.app</span>.",
+                status: "Puzzel 5: Vluchtcode invoeren",
+                svg: SVGS.swimming,
+                isVluchtCodePuzzel: true
+            },
+            poortwaker_intro: {
+                text: "Je bent heelhuids aangekomen bij de gigantische gouden paleispoort van de president! Maar de poort zit op slot en er staat een strenge poortwaker voor. Hij weigert je zomaar door te laten. <br><br>Je zult met de poortwaker moeten praten om hem de geheime poortcode te ontfutselen! Klik op de link hieronder om met de poortwaker te praten. Zodra je de code van hem hebt gekregen, vul je hem hieronder in!",
+                status: "Hoofdstuk 6: De Poortwaker",
+                svg: SVGS.gatekeeper,
+                isPoortwakerIntro: true
+            },
+            invoeren_poortwaker_code: {
+                text: "Voer de 4-cijferige code in die je van de poortwaker hebt ontfutseld om de poort van het paleis te openen!",
+                status: "Puzzel 6: Paleis Toegangscode",
+                svg: SVGS.gatekeeper,
+                isPoortwakerCodePuzzel: true
+            },
+            gewonnen: {
+                text: "Zodra je de code invoert, zwaaien de loodzware gouden poorten met een luid gekraak open! Je stormt het paleis binnen en rent de schitterende troonzaal in. De beveiliging achtervolgt en arresteert direct de boeven die vlak achter je renden! <br><br>Je overhandigt de legendarische schatkist aan de stomverbaasde President.<br><br>De president kijkt met grote ogen in de kist en roept dolblij uit:<br><span class='text-yellow-400 font-bold text-xl block my-3 italic'>'Dit is ongelooflijk! Jij bent een absolute nationale held! Met deze legendarische schat heb je ons land gered van een compleet faillissement!'</span><br>Je krijgt een prachtige gouden ere-medaille en een standbeeld op het dorpsplein!",
+                status: "EINDE - JE BENT EEN HELD!",
+                svg: SVGS.president,
+                choices: [
+                    { text: "Speel opnieuw!", next: "intro", action: () => { resetGame(); } }
+                ]
+            }
+        };
+
+        // --- PUZZEL 1 LOGICA (Zoekplaat) ---
+        function checkZoekplaatResult() {
+            const ansInput = document.getElementById('zoekplaat-input');
+            if (!ansInput) return;
+            const ans = ansInput.value.trim().toUpperCase();
+            
+            if (ans === '8G' || ans === '8 G') {
+                playSound('unlock');
+                showAlert("Schat Gevonden!", "Super gedaan! Je hebt de verborgen grot met de gouden schat precies gevonden op coördinaat 8G! Nu moeten we snel de edelstenen oplossen.");
+                renderScene('puzzel_juwelen_intro');
+            } else {
+                playSound('fail');
+                showAlert("Niet correct...", "Dat is niet het juiste coördinaat op de kaart. Kijk nog eens heel goed! (Tip: zoek de heldere gouden gloed in de grot, en voer eerst het getal bovenaan en dan de letter links in, bijvoorbeeld '1A').");
+            }
+        }
+
+        // --- PUZZEL 2 LOGICA (Juwelen) ---
+        function clickGem(color) {
+            playSound('chime');
+            
+            const glowEl = document.getElementById(`glow-${color}`);
+            if (glowEl) {
+                glowEl.setAttribute('stroke-width', '4');
+                glowEl.setAttribute('r', '22');
+                setTimeout(() => {
+                    glowEl.setAttribute('stroke-width', '0');
+                    glowEl.setAttribute('r', '18');
+                }, 300);
+            }
+
+            if (gemSequence.length < 3) {
+                gemSequence.push(color);
+                
+                const display = document.getElementById('gem-status-display');
+                if (display) {
+                    display.innerHTML = gemSequence.map(c => {
+                        let colorClass = c === 'Rood' ? 'text-red-500' : (c === 'Blauw' ? 'text-blue-500' : 'text-emerald-500');
+                        return `<span class="${colorClass} font-bold mr-2">♦ ${c}</span>`;
+                    }).join(' ');
+                }
+            }
+
+            if (gemSequence.length === 3) {
+                if (gemSequence[0] === 'Blauw' && gemSequence[1] === 'Rood' && gemSequence[2] === 'Groen') {
+                    setTimeout(() => {
+                        playSound('unlock');
+                        showAlert("Kist Geopend!", "De edelstenen lichten prachtig op en de kist klikt met een magisch geluid helemaal open!");
+                        renderScene('kelder_intro');
+                    }, 400);
+                } else {
+                    setTimeout(() => {
+                        playSound('fail');
+                        showAlert("Oeps!", "De edelstenen knipperen rood... Dat is de verkeerde combinatie. Probeer het nog eens!");
+                        resetGems();
+                    }, 400);
+                }
+            }
+        }
+
+        function resetGems() {
+            gemSequence = [];
+            const display = document.getElementById('gem-status-display');
+            if (display) {
+                display.innerHTML = "Nog geen juwelen ingedrukt...";
+            }
+        }
+
+
+        // --- PUZZEL 3 LOGICA (Kelder Cijferslot) ---
+        function updateHintDisplay() {
+            const h1 = document.getElementById('hint-1');
+            const h2 = document.getElementById('hint-2');
+            const h3 = document.getElementById('hint-3');
+            if(h1 && h2 && h3) {
+                h1.innerText = basementHintsFound.schilderij ? "Eerste cijfer is 4 (het zeilschip)" : "?";
+                h2.innerText = basementHintsFound.krat ? "Tweede cijfer is 8 (Romeinse VIII)" : "?";
+                h3.innerText = basementHintsFound.spin ? "Derde cijfer is 6 (de spin met 6 poten)" : "?";
+            }
+
+            if (basementHintsFound.schilderij) {
+                const el = document.getElementById('svg-hint-schilderij');
+                if (el) el.querySelector('rect').setAttribute('stroke', '#10b981');
+            }
+            if (basementHintsFound.krat) {
+                const el = document.getElementById('svg-hint-krat');
+                if (el) el.querySelector('rect').setAttribute('stroke', '#10b981');
+            }
+            if (basementHintsFound.spin) {
+                const el = document.getElementById('svg-hint-spin');
+                if (el) el.querySelector('circle').setAttribute('fill', '#10b981');
+            }
+        }
+
+        // --- REINIGINGS- EN INVOERMELDINGEN ---
+        function clickHint(item) {
+            playSound('click');
+            if (item === 'schilderij') {
+                basementHintsFound.schilderij = true;
+                showAlert("Het Schilderij", "Je kijkt goed naar het oude schilderij. Het zeilschip heeft de vorm van een perfect cijfer '4'!");
+            } else if (item === 'krat') {
+                basementHintsFound.krat = true;
+                showAlert("De Houten Krat", "Op de zijkant van de stoffige krat staat heel vaag in Romeinse cijfers gekrast: 'VIII'. Dat betekent 8!");
+            } else if (item === 'spin') {
+                basementHintsFound.spin = true;
+                showAlert("De Griezelige Spin", "Jakkes, een dichtgesponnen spinnenweb! Maar wacht eens even... deze spin heeft maar 6 poten in plaats van 8! Het cijfer is 6!");
+            }
+            updateHintDisplay();
+        }
+
+        function enterCodeDigit(num) {
+            playSound('click');
+            if (keySequence.length < 4) {
+                keySequence.push(num);
+                document.getElementById('code-display').value = keySequence.join('');
+            }
+        }
+
+        function clearCode() {
+            playSound('click');
+            keySequence = [];
+            const display = document.getElementById('code-display');
+            if (display) display.value = '';
+        }
+
+        function checkCode() {
+            const enteredCode = keySequence.join('');
+            if (currentScene === 'kelder_puzzel') {
+                if (enteredCode === '486') {
+                    playSound('unlock');
+                    showAlert("Succes!", "De code is correct! Je hoort een luide KLIK en de deur zwaait open!");
+                    renderScene('ontsnapt');
+                } else {
+                    playSound('fail');
+                    showAlert("Fout!", "Dat is niet de juiste code. De kelder blijft potdicht. Zoek goed naar de 3 hints!");
+                    clearCode();
+                }
+            } else if (currentScene === 'invoeren_vlucht_code') {
+                if (enteredCode === '1067') {
+                    playSound('unlock');
+                    showAlert("Code Geaccepteerd!", "Wauw! Je hebt de vluchtcode gekraakt en bent ontsnapt aan de boeven! Je staat nu voor de paleispoort.");
+                    renderScene('poortwaker_intro');
+                } else {
+                    playSound('fail');
+                    showAlert("Onjuiste code!", "Die code klopt niet. Speel de vlucht-minigame om de juiste code te krijgen!");
+                    clearCode();
+                }
+            } else if (currentScene === 'invoeren_poortwaker_code') {
+                if (enteredCode === '4370') {
+                    playSound('unlock');
+                    showAlert("Toegang Verleend!", "De code klopt! De poortwaker knikt en opent langzaam de paleisdeuren voor je!");
+                    renderScene('gewonnen');
+                } else {
+                    playSound('fail');
+                    showAlert("Toegang Geweigerd!", "Dat is niet de geheime code van de poortwaker. Praat met hem via de link om de juiste code te krijgen!");
+                    clearCode();
+                }
+            }
+        }
+
+        function resetPuzzel() {
+            keySequence = [];
+            gemSequence = [];
+            routeStep = 0;
+            basementHintsFound = { schilderij: false, krat: false, spin: false };
+        }
+
+        function resetGame() {
+            resetPuzzel();
+        }
+
+
+        // --- PUZZEL 4 LOGICA (Interactieve Routekaart) ---
+        function clickMapCheckpoint(step) {
+            playSound('click');
+            
+            if (step === 'wrong-ship') {
+                playSound('fail');
+                showAlert("Hinderlaag!", "Oh nee! Daar ligt het schip van de piraten! Ze zien je meteen staan en je moet vluchten. Probeer een andere weg.");
+                return;
+            }
+            if (step === 'wrong-swamp') {
+                playSound('fail');
+                showAlert("Doodlopend!", "Oeps! Je loopt een gevaarlijk moeras in vol knijpende krabben. Je kunt hier niet verder.");
+                return;
+            }
+
+            const routeStatus = document.getElementById('route-status-text');
+
+            if (step === 1 && routeStep === 0) {
+                routeStep = 1;
+                document.getElementById('map-cp-1').classList.remove('opacity-40');
+                document.getElementById('circle-cp-1').setAttribute('stroke', '#10b981');
+                document.getElementById('circle-cp-1').setAttribute('stroke-width', '3');
+                document.getElementById('map-cp-2').classList.remove('opacity-40');
+                if (routeStatus) {
+                    routeStatus.innerHTML = "<span class='text-yellow-400'>Stap 1 voltooid! Strand bereikt. Klik nu op Checkpoint 2 (Bloemenbos)...</span>";
+                }
+            } else if (step === 2 && routeStep === 1) {
+                routeStep = 2;
+                const path1 = document.getElementById('route-path-1');
+                if (path1) {
+                    path1.setAttribute('stroke', '#10b981');
+                    path1.setAttribute('stroke-width', '3');
+                    path1.setAttribute('opacity', '1');
+                }
+                document.getElementById('map-cp-2').classList.remove('opacity-40');
+                document.getElementById('circle-cp-2').setAttribute('stroke', '#10b981');
+                document.getElementById('circle-cp-2').setAttribute('stroke-width', '3');
+                document.getElementById('map-cp-3').classList.remove('opacity-40');
+                if (routeStatus) {
+                    routeStatus.innerHTML = "<span class='text-yellow-400'>Stap 2 voltooid! Bos bereikt. Klik nu op Checkpoint 3 (Paleis van de President)...</span>";
+                }
+            } else if (step === 3 && routeStep === 2) {
+                routeStep = 3;
+                const path2 = document.getElementById('route-path-2');
+                if (path2) {
+                    path2.setAttribute('stroke', '#10b981');
+                    path2.setAttribute('stroke-width', '3');
+                    path2.setAttribute('opacity', '1');
+                }
+                document.getElementById('map-cp-3').classList.remove('opacity-40');
+                document.getElementById('circle-cp-3').setAttribute('stroke', '#10b981');
+                document.getElementById('circle-cp-3').setAttribute('stroke-width', '3');
+                if (routeStatus) {
+                    routeStatus.innerHTML = "<span class='text-emerald-400 font-bold'>Route succesvol gepland! Je wordt doorgestuurd...</span>";
+                }
+                setTimeout(() => {
+                    playSound('unlock');
+                    showAlert("Route compleet!", "Je hebt de perfecte sluiproute naar de president getekend. Nu snel verder!");
+                    renderScene('vlucht_instructie');
+                }, 500);
+            } else {
+                playSound('fail');
+                showAlert("Verkeerde volgorde!", "Je moet de route stap voor stap opbouwen. Volg de aanwijzingen op het perkament!");
+            }
+        }
+
+
+        // --- RENDER SCÈNE ENGINE ---
+        function renderScene(sceneKey) {
+            currentScene = sceneKey;
+            const scene = StoryData[sceneKey];
+            if (!scene) return;
+
+            document.getElementById('game-status').innerText = scene.status;
+
+            const visualContainer = document.getElementById('visual-container');
+
+            // Bepaal de visualisatie: als het de zoekplaat is tonen we de geüploade kaart met zoom-optie
+            if (scene.isZoekplaatPuzzel) {
+                visualContainer.innerHTML = `
+                    <div class="relative w-full h-full flex flex-col justify-center items-center group cursor-zoom-in" onclick="zoomImage('Schatkaart.png')">
+                        <img src="Schatkaart.png" alt="Schatkaart Zoekplaat" class="max-w-full max-h-[300px] md:max-h-[380px] rounded-xl border-2 border-amber-800/80 shadow-2xl object-contain group-hover:scale-105 group-hover:border-amber-500 transition-all duration-300" onerror="this.onerror=null; this.src='https://placehold.co/600x400?text=Schatkaart+Fout';">
+                        <div class="absolute bottom-2 bg-slate-950/90 border border-amber-500/40 text-amber-400 text-xs px-3 py-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none flex items-center gap-1 shadow-lg">
+                            <span>🔍 Klik om te vergroten</span>
+                        </div>
+                    </div>
+                `;
+            } else {
+                visualContainer.innerHTML = scene.svg;
+            }
+
+            const textEl = document.getElementById('story-text');
+            textEl.innerHTML = scene.text;
+
+            const actionPanel = document.getElementById('action-panel');
+            actionPanel.innerHTML = '';
+
+            if (scene.isZoekplaatPuzzel) {
+                actionPanel.innerHTML = `
+                    <div class="bg-slate-950 p-4 rounded-xl border border-amber-900/60 shadow-inner space-y-3">
+                        <p class="text-xs text-slate-400 italic text-center">Bekijk de kaart goed (klik erop om in te zoomen!). Voer de coördinaten in (bijv. 1A).</p>
+                        <div class="flex justify-center gap-2">
+                            <input id="zoekplaat-input" type="text" class="w-36 bg-black border-2 border-amber-700 text-amber-500 text-center font-mono text-2xl py-2 rounded-lg tracking-wider" placeholder="bijv. 1A" maxlength="4">
+                            <button onclick="checkZoekplaatResult()" class="bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold px-6 py-2 rounded-lg transition-colors">Controleer</button>
+                        </div>
+                    </div>
+                `;
+                // Toevoegen van een 'Enter' snelkoppeling in het invoerveld
+                setTimeout(() => {
+                    const input = document.getElementById('zoekplaat-input');
+                    if (input) {
+                        input.focus();
+                        input.addEventListener('keypress', (e) => {
+                            if (e.key === 'Enter') checkZoekplaatResult();
+                        });
+                    }
+                }, 50);
+            } else if (scene.isJuwelenPuzzel) {
+                actionPanel.innerHTML = `
+                    <div class="bg-slate-950 p-4 rounded-xl border border-amber-900/60 shadow-inner space-y-3 text-center">
+                        <p class="text-xs text-slate-400 italic">Druk op de gekleurde diamanten in de afbeelding in de juiste volgorde volgens de stem!</p>
+                        <button onclick="resetGems()" class="bg-red-950 text-red-400 border border-red-800 hover:bg-red-900 px-4 py-2 rounded-lg transition-colors text-sm font-semibold">
+                            Reset Edelstenen ⟲
+                        </button>
+                    </div>
+                `;
+            } else if (scene.isPuzzel) {
+                actionPanel.innerHTML = `
+                    <div class="bg-slate-950 p-4 rounded-xl border border-amber-900/60 shadow-inner">
+                        <label class="block text-xs font-mono uppercase text-amber-500 mb-2 tracking-widest text-center">🔐 Interactief Cijferslot (3 cijfers)</label>
+                        <div class="flex justify-center gap-2 mb-3">
+                            <input id="code-display" type="text" readonly class="w-36 bg-black border-2 border-amber-700 text-amber-500 text-center font-mono text-2xl py-1 rounded-lg tracking-wider" placeholder="---">
+                            <button onclick="checkCode()" class="bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold px-4 rounded-lg transition-colors">OK</button>
+                            <button onclick="clearCode()" class="bg-red-950 text-red-400 border border-red-800 hover:bg-red-900 px-3 rounded-lg transition-colors">C</button>
+                        </div>
+                        <div class="grid grid-cols-5 gap-2 max-w-[250px] mx-auto">
+                            ${[1,2,3,4,5,6,7,8,9,0].map(n => `
+                                <button onclick="enterCodeDigit(${n})" class="bg-slate-800 hover:bg-slate-700 text-amber-100 font-bold py-2 rounded-lg text-sm transition-colors border border-slate-700">${n}</button>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+                setTimeout(updateHintDisplay, 50);
+            } else if (scene.isRoutePuzzel) {
+                actionPanel.innerHTML = `
+                    <div class="bg-slate-950 p-4 rounded-xl border border-amber-900/60 shadow-inner text-center space-y-2">
+                        <p class="text-xs text-slate-400 italic">Klik direct op de ronde checkpoints op de kaart hierboven om de veilige vluchtroute te ontdekken!</p>
+                    </div>
+                `;
+            } else if (scene.isVluchtInstructie) {
+                actionPanel.innerHTML = `
+                    <div class="space-y-3">
+                        <a href="https://wegnaarpresident.lovable.app" target="_blank" rel="noopener noreferrer" onclick="playSound('click')" class="w-full text-center bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 border border-emerald-500 text-white font-bold py-4 px-5 rounded-xl transition-all duration-200 block shadow-lg transform hover:-translate-y-1">
+                            🎮 Start de Vlucht op wegnaarpresident.lovable.app ➔
+                        </a>
+                        <button onclick="playSound('click'); renderScene('invoeren_vlucht_code');" class="w-full text-center bg-slate-800 hover:bg-slate-700 border border-amber-900/60 text-amber-300 font-medium py-3 px-5 rounded-xl transition-all">
+                            Ik heb de code! (Vul code in) ➔
+                        </button>
+                    </div>
+                `;
+            } else if (scene.isVluchtCodePuzzel || scene.isPoortwakerCodePuzzel) {
+                actionPanel.innerHTML = `
+                    <div class="bg-slate-950 p-4 rounded-xl border border-amber-900/60 shadow-inner">
+                        <label class="block text-xs font-mono uppercase text-amber-500 mb-2 tracking-widest text-center">🔐 Voer de 4-cijferige Code In</label>
+                        <div class="flex justify-center gap-2 mb-3">
+                            <input id="code-display" type="text" readonly class="w-36 bg-black border-2 border-amber-700 text-amber-500 text-center font-mono text-2xl py-1 rounded-lg tracking-wider" placeholder="----">
+                            <button onclick="checkCode()" class="bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold px-4 rounded-lg transition-colors">OK</button>
+                            <button onclick="clearCode()" class="bg-red-950 text-red-400 border border-red-800 hover:bg-red-900 px-3 rounded-lg transition-colors">C</button>
+                        </div>
+                        <div class="grid grid-cols-5 gap-2 max-w-[250px] mx-auto">
+                            ${[1,2,3,4,5,6,7,8,9,0].map(n => `
+                                <button onclick="enterCodeDigit(${n})" class="bg-slate-800 hover:bg-slate-700 text-amber-100 font-bold py-2 rounded-lg text-sm transition-colors border border-slate-700">${n}</button>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            } else if (scene.isPoortwakerIntro) {
+                actionPanel.innerHTML = `
+                    <div class="space-y-3">
+                        <a href="https://gemini.google.com/gem/19TY34REhJ1ffYkP7dB9ZnU4tF7pqDr0b?usp=sharing" target="_blank" rel="noopener noreferrer" onclick="playSound('click')" class="w-full text-center bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-500 hover:to-indigo-600 border border-blue-500 text-white font-bold py-4 px-5 rounded-xl transition-all duration-200 block shadow-lg transform hover:-translate-y-1">
+                            💬 Praat met de Poortwaker op Gemini ➔
+                        </a>
+                        <button onclick="playSound('click'); renderScene('invoeren_poortwaker_code');" class="w-full text-center bg-slate-800 hover:bg-slate-700 border border-amber-900/60 text-amber-300 font-medium py-3 px-5 rounded-xl transition-all">
+                            Ik heb de poortcode! (Vul code in) ➔
+                        </button>
+                    </div>
+                `;
+            } else if (scene.choices) {
+                scene.choices.forEach(choice => {
+                    const btn = document.createElement('button');
+                    btn.className = "w-full text-left bg-gradient-to-r from-amber-950/80 to-slate-900 hover:from-amber-900/90 hover:to-amber-950/50 border border-amber-900/60 hover:border-amber-500 text-amber-200 hover:text-white font-medium py-3 px-5 rounded-xl transition-all duration-200 flex justify-between items-center group shadow-md";
+                    
+                    btn.onclick = () => {
+                        playSound('click');
+                        if (choice.action) choice.action();
+                        renderScene(choice.next);
+                    };
+
+                    btn.innerHTML = `
+                        <span>${choice.text}</span>
+                        <span class="transform group-hover:translate-x-1 transition-transform text-amber-500">➔</span>
+                    `;
+                    actionPanel.appendChild(btn);
+                });
+            }
+        }
+
+        // Start het spel direct op de introductie-pagina
+        window.onload = function() {
+            renderScene('intro');
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,1132 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zombie Escape - De Ultieme Trilogie</title>
+    <!-- Tailwind CSS voor een ultra-moderne compacte UI -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts voor griezelig en modern lettertype -->
+    <link href="https://fonts.googleapis.com/css2?family=Creepster&family=Inter:wght@300;400;600;800;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <!-- FontAwesome voor premium icoontjes -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #030204;
+            overflow: hidden;
+            height: 100vh;
+            user-select: none;
+        }
+        .horror-title {
+            font-family: 'Creepster', cursive;
+            letter-spacing: 0.1em;
+            text-shadow: 0 0 10px #ef4444, 0 0 25px #7f1d1d;
+        }
+        .font-mono-tech {
+            font-family: 'Share Tech Mono', monospace;
+        }
+        
+        @keyframes flicker {
+            0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% {
+                opacity: 0.9;
+                box-shadow: 0 0 15px rgba(239, 68, 68, 0.4);
+            }
+            20%, 24%, 55% {
+                opacity: 0.15;
+                box-shadow: 0 0 2px rgba(239, 68, 68, 0.05);
+            }
+        }
+        .flickering-light {
+            animation: flicker 4s infinite alternate;
+        }
+
+        @keyframes float-slow {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-6px) rotate(1.5deg); }
+        }
+        .float-anim {
+            animation: float-slow 3.5s infinite ease-in-out;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            10% { transform: translate(-4px, -4px) rotate(-1deg); }
+            30% { transform: translate(4px, -2px) rotate(1deg); }
+            50% { transform: translate(-4px, 4px) rotate(-1deg); }
+            75% { transform: translate(4px, 4px) rotate(0deg); }
+        }
+        .camera-shake {
+            animation: shake 0.35s infinite;
+        }
+
+        @keyframes roll-carpet {
+            0% {
+                height: 48px;
+                transform: scaleY(1);
+                border-radius: 9999px;
+                background: linear-gradient(to bottom, #451a03, #78350f);
+            }
+            100% {
+                height: 140px;
+                transform: scaleY(1);
+                border-radius: 12px;
+                background: radial-gradient(circle, #0f0502 10%, #451a03 50%, #1e0b02 100%);
+                box-shadow: inset 0 0 30px rgba(0,0,0,0.95), 0 10px 15px rgba(0,0,0,0.5);
+            }
+        }
+        .carpet-rolled-out {
+            animation: roll-carpet 2s forwards cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .fall-transition {
+            transition: transform 1.6s cubic-bezier(0.6, -0.28, 0.735, 0.045), opacity 1.3s ease-out, filter 1.3s ease-out;
+            transform: translateY(-130%) scale(0.85) !important;
+            opacity: 0 !important;
+            filter: blur(10px) !important;
+        }
+
+        /* Dynamisch Zaklampeffect */
+        .dark-overlay {
+            background: radial-gradient(circle var(--light-radius, 120px) at var(--mouse-x, 50%) var(--mouse-y, 50%), transparent var(--light-inner, 0%), rgba(0,0,0,0.85) var(--light-outer, 60%), rgba(0,0,0,0.98) 100%);
+        }
+        .dark-overlay-soft {
+            background: radial-gradient(circle 150px at var(--mouse-x, 50%) var(--mouse-y, 50%), transparent 20%, rgba(0,0,0,0.85) 60%, rgba(0,0,0,0.97) 100%);
+        }
+
+        .living-room-bg {
+            background: 
+                radial-gradient(circle at 20% 30%, rgba(30, 20, 10, 0.35) 0%, transparent 40%),
+                radial-gradient(circle at 80% 70%, rgba(10, 10, 20, 0.35) 0%, transparent 40%),
+                #07070a;
+        }
+
+        @keyframes swing-bat {
+            0% { transform: rotate(0deg) translateX(0px); opacity: 0; }
+            30% { transform: rotate(-60deg) translateX(5px); opacity: 1; }
+            70% { transform: rotate(100deg) translateX(15px); opacity: 1; }
+            100% { transform: rotate(90deg) translateX(10px); opacity: 0; }
+        }
+        .bat-swing { animation: swing-bat 0.25s ease-in-out; transform-origin: top left; }
+
+        .zombie-element { transition: left 0.8s cubic-bezier(0.25, 1, 0.5, 1), top 0.8s cubic-bezier(0.25, 1, 0.5, 1); }
+        .zombie-inner { animation: float-slow 3s infinite ease-in-out; }
+
+        .door-transition { transition: transform 1.5s cubic-bezier(0.4, 0, 0.2, 1); transform: rotateY(-110deg); transform-origin: right; }
+
+        /* Knipperend vizier voor alarm lock */
+        @keyframes target-pulse {
+            0% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.3); opacity: 1; border-color: #ef4444; }
+            100% { transform: scale(1); opacity: 0.8; }
+        }
+        .target-lock {
+            animation: target-pulse 1s infinite ease-in-out;
+        }
+    </style>
+</head>
+<body class="flex flex-col h-screen text-gray-200 justify-between select-none overflow-hidden">
+
+    <header class="bg-gray-950 border-b border-red-900/40 p-3 shadow-lg z-30 flex-shrink-0">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-3">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid fa-radiation text-red-500 text-2xl animate-spin"></i>
+                <div>
+                    <h1 class="horror-title text-2xl text-red-500">ZOMBIE ESCAPE</h1>
+                    <p id="levelSubtitle" class="text-[10px] text-gray-400 uppercase tracking-widest font-mono-tech">Level 1: De Gevangeniscel (Ruimte)</p>
+                </div>
+            </div>
+
+            <!-- Level Tracker -->
+            <div id="levelTracker" class="flex gap-1 bg-black/50 p-1 rounded-lg border border-gray-900/60 text-xs">
+                <span id="badgeL1" class="px-2 py-0.5 font-bold rounded bg-red-600 text-white shadow">L1</span>
+                <span id="badgeL2" class="px-2 py-0.5 font-bold text-gray-500">L2</span>
+                <span id="badgeL3" class="px-2 py-0.5 font-bold text-gray-500">L3</span>
+            </div>
+
+            <!-- Handige bedieningsknoppen -->
+            <div class="flex gap-2 items-center">
+                <div class="flex items-center gap-1 bg-black/50 p-1 rounded-lg border border-red-900/40 text-xs">
+                    <label for="levelSelect" class="text-[9px] font-bold text-gray-500 uppercase px-1">Ga naar:</label>
+                    <select id="levelSelect" onchange="changeLevel(parseInt(this.value))" class="bg-red-950/80 border border-red-900 text-red-200 font-bold px-2 py-0.5 rounded cursor-pointer focus:outline-none text-[11px]">
+                        <option value="1">Lvl 1: De Gevangeniscel</option>
+                        <option value="2">Lvl 2: De Woonkamer</option>
+                        <option value="3">Lvl 3: Zombie Park (CCTV)</option>
+                    </select>
+                </div>
+                
+                <button onclick="openDiary()" class="bg-amber-700/80 hover:bg-amber-600 text-white px-3 py-1.5 rounded-lg border border-amber-500 text-xs font-bold transition">
+                    <i class="fa-solid fa-book-open mr-1"></i> Verhaal & Hints
+                </button>
+                <button id="soundToggle" onclick="toggleSound()" class="bg-gray-900 hover:bg-gray-800 text-yellow-500 px-3 py-1.5 rounded-lg border border-yellow-700/50 text-xs">
+                    <i id="soundIcon" class="fa-solid fa-volume-high"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main id="gameContainer" class="flex-grow flex flex-col max-w-7xl w-full mx-auto p-3 gap-3 relative overflow-hidden h-[calc(100vh-110px)] transition-all duration-1000">
+
+        <!-- ================= LEVEL 1 VIEW ================= -->
+        <div id="level1View" class="flex-grow flex flex-col bg-slate-950 rounded-xl border-2 border-red-950/60 shadow-2xl overflow-hidden relative">
+            <div id="flashlightL1" class="absolute inset-0 dark-overlay pointer-events-none z-10 transition-all duration-75"></div>
+
+            <div class="absolute top-2 left-1/2 transform -translate-x-1/2 w-32 h-14 bg-blue-950/15 border-2 border-zinc-800 rounded-b-md flex justify-around p-0.5">
+                <div class="w-0.5 h-full bg-zinc-800"></div>
+                <div class="w-0.5 h-full bg-zinc-800"></div>
+                <div class="w-0.5 h-full bg-zinc-800"></div>
+            </div>
+
+            <div class="absolute top-3 left-4 flex flex-col items-center">
+                <div class="w-4 h-2 bg-zinc-700 rounded-t-full"></div>
+                <div class="w-3 h-3 bg-red-600 rounded-full flickering-light"></div>
+            </div>
+
+            <div class="absolute top-3 right-3 z-30 max-w-[280px] bg-red-950/90 border border-red-500/50 p-2.5 rounded-lg shadow-lg pointer-events-none text-xs">
+                <h4 class="font-bold text-red-400 mb-1 flex items-center gap-1.5">
+                    <i class="fa-solid fa-lightbulb animate-bounce text-yellow-400"></i> MISSIE: CIJFERPUZZEL
+                </h4>
+                <p class="text-[11px] text-gray-300 leading-tight">
+                    Klik op de 9 zombies in de juiste volgorde (**1 t/m 9**). Spel het negenletterwoord **WOONKAMER** om te ontsnappen!
+                </p>
+            </div>
+
+            <!-- Speelveld voor zombies -->
+            <div id="zombieFieldL1" class="flex-grow relative overflow-hidden cursor-crosshair"></div>
+
+            <!-- Vloerelementen: Het tapijt, het slot -->
+            <div class="bg-zinc-950/90 border-t border-red-950/30 p-4 relative z-20 grid grid-cols-1 md:grid-cols-2 gap-4 items-center flex-shrink-0">
+                <div class="flex flex-col items-center justify-center p-2 bg-black/60 rounded-lg border border-red-950/60">
+                    <span class="text-[10px] font-bold text-red-500 uppercase mb-1 tracking-wider"><i class="fa-solid fa-lock mr-1"></i>HET CIJFERSLOT</span>
+                    <button id="lockBtnL1" onclick="openLockOverlay()" class="bg-zinc-800 hover:bg-zinc-700 text-yellow-500 font-bold py-2 px-5 rounded-md border border-yellow-600/50 shadow-md transition text-xs">
+                        <i class="fa-solid fa-key"></i> VOER NEGENLETTERWOORD IN
+                    </button>
+                    <p id="lockStatusL1" class="text-[10px] text-gray-400 mt-1">Status: Vergrendeld.</p>
+                </div>
+
+                <div class="flex flex-col items-center">
+                    <span class="text-[10px] font-bold text-gray-400 uppercase mb-1 tracking-wider">Het Vloerkleed (Tik om door te graven)</span>
+                    <div id="carpetContainer" class="w-full max-w-[240px] flex items-center justify-center relative min-h-[48px]">
+                        <button id="carpetBtn" onclick="digCarpet()" class="w-full h-12 bg-amber-950 border-2 border-amber-900 rounded-full shadow-md flex items-center justify-center px-3 cursor-pointer select-none">
+                            <span class="text-xs text-amber-300 font-bold tracking-wider" id="carpetText">TAPYT (Klik om te graven)</span>
+                        </button>
+                    </div>
+                    <div class="w-full max-w-[240px] bg-gray-900 h-2 rounded-full overflow-hidden mt-1">
+                        <div id="digProgress" class="bg-red-600 h-full w-0 transition-all"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= LEVEL 2 VIEW ================= -->
+        <div id="level2View" class="hidden flex-grow flex flex-col bg-zinc-950 rounded-xl border-2 border-zinc-900 shadow-2xl overflow-hidden relative">
+            <div id="flashlightL2" class="absolute inset-0 dark-overlay-soft pointer-events-none z-10 transition-all"></div>
+            
+            <div id="level2Area" class="w-full h-full relative overflow-hidden living-room-bg">
+                <!-- Speler -->
+                <div id="playerL2" class="absolute w-12 h-12 flex items-center justify-center pointer-events-none z-20" style="left: 10%; top: 50%;">
+                    <div id="playerL2Visual" class="relative">
+                        <svg viewBox="0 0 64 64" class="w-12 h-12 shadow-xl">
+                            <path d="M12,48 Q32,60 52,48 L48,24 Q32,16 16,24 Z" fill="#263238" stroke="#101010" stroke-width="2"/>
+                            <circle cx="32" cy="18" r="10" fill="#ffe0b2" stroke="#5d4037" stroke-width="2"/>
+                            <circle cx="28" cy="17" r="1" fill="black"/>
+                            <circle cx="36" cy="17" r="1" fill="black"/>
+                            <rect x="22" y="28" width="20" height="18" rx="3" fill="#546e7a" stroke="#101010"/>
+                        </svg>
+                        
+                        <!-- Knuppel -->
+                        <div id="playerBat" class="absolute left-full top-1/2 -translate-y-1/2 ml-[-15px] opacity-0 pointer-events-none z-10">
+                            <svg viewBox="0 0 50 15" class="w-14 h-4 origin-left">
+                                <rect x="0" y="3" width="12" height="9" rx="2" fill="#8d6e63"/>
+                                <rect x="12" y="0" width="38" height="15" rx="3" fill="#bcaaa4"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Interactief meubilair -->
+                <div id="obj_sofa" class="interactive-object absolute w-28 h-16 left-[20%] top-[30%] cursor-pointer" onclick="inspectL2Furniture(this, 'sofa')">
+                    <svg viewBox="0 0 160 100" class="w-full h-full">
+                        <rect x="0" y="30" width="160" height="70" rx="10" fill="#7f1d1d" stroke="#450a0a" stroke-width="2"/>
+                        <rect x="15" y="0" width="130" height="60" rx="10" fill="#991b1b"/>
+                    </svg>
+                </div>
+                <div id="obj_toolbox" class="interactive-object absolute w-16 h-12 left-[50%] top-[65%] cursor-pointer" onclick="inspectL2Furniture(this, 'toolbox')">
+                    <svg viewBox="0 0 100 80" class="w-full h-full">
+                        <rect x="10" y="30" width="80" height="50" rx="3" fill="#1e293b" stroke="#0f172a" stroke-width="2"/>
+                    </svg>
+                </div>
+                <div id="obj_cabinet" class="interactive-object absolute w-20 h-32 right-[25%] top-[20%] cursor-pointer" onclick="inspectL2Furniture(this, 'cabinet')">
+                    <svg viewBox="0 0 100 160" class="w-full h-full">
+                        <rect x="5" y="5" width="90" height="150" fill="#44403c" stroke="#1c1917" stroke-width="3"/>
+                    </svg>
+                </div>
+
+                <!-- Uitgang eiken deur -->
+                <div id="exitDoorContainer" class="absolute right-0 top-[35%] w-16 h-48 border-l-4 border-gray-950 flex items-center justify-center p-2 z-20">
+                    <div id="exitDoor" class="w-full h-full bg-zinc-900 border-2 border-red-950 rounded shadow-inner flex flex-col items-center justify-between py-6">
+                        <div class="flex flex-col gap-3">
+                            <i id="lock1" class="fa-solid fa-lock text-red-600"></i>
+                            <i id="lock2" class="fa-solid fa-lock text-red-600"></i>
+                            <i id="lock3" class="fa-solid fa-lock text-red-600"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="zombiesL2Container"></div>
+                
+                <div class="absolute bottom-4 left-4 bg-black/80 p-3 rounded-lg border border-red-900/50 max-w-xs text-xs z-20">
+                    <h4 class="font-bold text-yellow-400 mb-1">MISSIE: DE SLEUTELS</h4>
+                    <p class="text-gray-300 leading-snug">
+                        Zoek 3 sleutels tussen het gereedschap en meubels. Sla zombies neer door ze aan te tikken!
+                    </p>
+                    <div class="mt-2 text-yellow-500 font-bold" id="keysFoundText">Sleutels gevonden: 0 / 3</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= LEVEL 3 VIEW (CCTV MAP SEARCH PUZZLE) ================= -->
+        <div id="level3View" class="hidden flex-grow flex flex-col md:flex-row gap-4 bg-zinc-950 rounded-xl border-2 border-blue-900/40 shadow-2xl p-4 overflow-hidden relative">
+            
+            <!-- Map en zaklamp simulator (Links) -->
+            <div class="flex-grow relative rounded-lg border border-zinc-800 overflow-hidden bg-black flex justify-center items-center h-2/3 md:h-full cursor-crosshair" id="mapContainerL3">
+                
+                <!-- De gevraagde afbeelding unnamed.png -->
+                <img src="unnamed.png" alt="Zombie Park plattegrond" id="mapImageL3" class="w-full h-full object-contain pointer-events-none select-none max-h-full">
+                
+                <!-- Het zaklampmasker dat over de kermisplattegrond schijnt -->
+                <div id="flashlightL3" class="absolute inset-0 dark-overlay pointer-events-none transition-all duration-75"></div>
+                
+                <!-- Indicator vizier dat op de zombie geplaatst wordt bij een lock-on -->
+                <div id="targetIndicatorL3" class="absolute w-12 h-12 border-4 border-dashed border-red-500 rounded-full pointer-events-none hidden target-lock">
+                    <div class="absolute inset-0 m-auto w-2 h-2 bg-red-500 rounded-full animate-ping"></div>
+                </div>
+            </div>
+
+            <!-- Control Room Terminal & Input Panel (Rechts) -->
+            <div class="w-full md:w-80 flex-shrink-0 flex flex-col bg-zinc-900/90 border border-zinc-800 rounded-lg p-4 font-mono-tech justify-between text-xs gap-3">
+                <div class="space-y-3">
+                    <div class="flex items-center gap-2 text-blue-400 font-bold border-b border-blue-950 pb-2">
+                        <i class="fa-solid fa-tower-broadcast text-lg animate-pulse"></i>
+                        <div>
+                            <h3 class="text-sm font-black tracking-wider uppercase">CCTV-CONTROLEKAMER</h3>
+                            <p class="text-[9px] text-gray-400">Plattegrond analyseert...</p>
+                        </div>
+                    </div>
+
+                    <div class="p-2.5 bg-black/80 rounded border border-zinc-800 text-[11px] text-gray-300 leading-relaxed">
+                        <p class="font-bold text-yellow-500 mb-1"><i class="fa-solid fa-circle-info mr-1"></i> OPDRACHT:</p>
+                        Beweeg de zaklamp over de plattegrond van het kermis-park hiernaast. Zoek de verborgen zombie. Voer zijn gridnummer (bijv. A3, F8) in de console hieronder in of klik direct op zijn positie op de kaart!
+                    </div>
+
+                    <!-- Live vizier loggegevens -->
+                    <div class="p-2 bg-black/40 border border-zinc-800 rounded">
+                        <span class="text-[10px] text-gray-500 block uppercase font-bold tracking-wider mb-1">CCTV-SPOORZOEKER FEEDBACK</span>
+                        <div class="flex justify-between items-center text-sm">
+                            <span class="text-cyan-400">Vizier coördinaat:</span>
+                            <span id="coordTrackerL3" class="text-white font-bold bg-zinc-800 px-2 py-0.5 rounded text-xs">--</span>
+                        </div>
+                    </div>
+
+                    <!-- Handmatige coördinateninvoer -->
+                    <div class="flex flex-col gap-1.5 mt-2">
+                        <label for="codeInputL3" class="text-[10px] font-bold text-gray-400 uppercase">Handmatige Gridcoördinaat:</label>
+                        <div class="flex gap-2">
+                            <input id="codeInputL3" type="text" placeholder="ZOMBIE GRID (Bv. B5)" class="bg-black border border-blue-900 text-blue-400 font-bold text-center py-2 px-3 rounded text-sm uppercase tracking-widest focus:outline-none focus:border-blue-400 flex-grow" maxlength="3">
+                            <button onclick="checkGridCodeL3()" class="bg-blue-950 hover:bg-blue-900 border border-blue-500 text-blue-200 font-bold px-4 rounded text-xs transition">
+                                SCAN
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Keyboard helper -->
+                <div class="space-y-1.5">
+                    <span class="text-[9px] text-gray-500 font-bold uppercase tracking-wider">Hulp bij selecteren</span>
+                    <div class="grid grid-cols-5 gap-1 text-[10px] text-center">
+                        <button onclick="setGridInput('B5')" class="p-1 bg-zinc-800 hover:bg-zinc-700 rounded border border-zinc-700 text-yellow-500 font-black">B5 (Spoor)</button>
+                        <button onclick="setGridInput('A5')" class="p-1 bg-zinc-800 hover:bg-zinc-700 rounded border border-zinc-700">A5</button>
+                        <button onclick="setGridInput('C4')" class="p-1 bg-zinc-800 hover:bg-zinc-700 rounded border border-zinc-700">C4</button>
+                        <button onclick="setGridInput('E6')" class="p-1 bg-zinc-800 hover:bg-zinc-700 rounded border border-zinc-700">E6</button>
+                        <button onclick="setGridInput('F2')" class="p-1 bg-zinc-800 hover:bg-zinc-700 rounded border border-zinc-700">F2</button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- PRE-STYLED PREMIUM CUSTOM ALERT MODAL -->
+    <div id="customModal" class="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-zinc-900 border-2 border-red-900 rounded-xl max-w-sm w-full p-5 text-center shadow-2xl relative">
+            <h3 id="modalTitle" class="text-lg font-bold text-red-500 mb-2 font-mono-tech">MELDING</h3>
+            <p id="modalMessage" class="text-xs text-gray-300 mb-4 leading-relaxed"></p>
+            <button id="modalBtn" class="bg-red-700 hover:bg-red-600 text-white font-bold py-2 px-6 rounded-lg text-xs transition active:scale-95">OK</button>
+        </div>
+    </div>
+
+    <!-- OVERLAY: Level 1 Cijferslot -->
+    <div id="lockOverlayL1" class="fixed inset-0 bg-black/85 z-40 flex items-center justify-center p-4 hidden">
+        <div class="bg-zinc-900 border-2 border-yellow-600 rounded-xl max-w-sm w-full p-5 text-center shadow-2xl relative">
+            <button onclick="closeLockOverlay()" class="absolute top-3 right-3 text-gray-400 hover:text-white transition">
+                <i class="fa-solid fa-circle-xmark text-xl"></i>
+            </button>
+            <i class="fa-solid fa-lock-open text-yellow-500 text-4xl mb-3 animate-bounce"></i>
+            <h3 class="text-lg font-bold text-yellow-500 tracking-wider mb-1 font-mono-tech">CIJFERSLOT</h3>
+            <p class="text-xs text-gray-400 mb-4">Voer het ontcijferde negenletterwoord in.</p>
+            
+            <div class="flex justify-center mb-4">
+                <input id="codeInputL1" type="text" placeholder="NEGENLETTERWOORD" class="bg-black border-2 border-yellow-600 text-yellow-500 text-xl font-mono text-center py-2.5 px-3 rounded-lg focus:outline-none focus:border-yellow-400 w-full uppercase tracking-widest max-w-[240px]" maxlength="9">
+            </div>
+
+            <div id="errorMsgL1" class="text-red-500 text-xs font-semibold mb-3 hidden animate-pulse">
+                <i class="fa-solid fa-triangle-exclamation mr-1"></i> Onjuist woord! Probeer opnieuw.
+            </div>
+
+            <div class="flex gap-3">
+                <button onclick="closeLockOverlay()" class="flex-1 bg-gray-800 hover:bg-gray-700 text-white font-bold py-2 rounded-lg text-xs transition">
+                    Annuleer
+                </button>
+                <button onclick="checkCodeL1()" class="flex-1 bg-yellow-600 hover:bg-yellow-500 text-zinc-950 font-bold py-2 rounded-lg text-xs shadow-lg transition">
+                    Probeer Slot
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- OVERLAY: Dagboek & Hints -->
+    <div id="diaryOverlay" class="fixed inset-0 bg-black/95 z-40 flex items-center justify-center p-4 hidden">
+        <div class="bg-amber-50 text-gray-950 rounded-2xl max-w-lg w-full p-6 border-4 border-amber-200 relative shadow-2xl flex flex-col max-h-[90vh]" style="background-image: radial-gradient(#fafaf9 60%, #f5f5f4 100%);">
+            
+            <button onclick="closeDiary()" class="absolute top-3 right-3 text-stone-600 hover:text-stone-900 active:scale-95 transition-all w-8 h-8 rounded-full bg-amber-200/50 flex items-center justify-center shadow-sm">
+                <i class="fa-solid fa-plus text-xl rotate-45"></i>
+            </button>
+
+            <div class="mb-4 pb-3 border-b-2 border-stone-300 pr-8">
+                <h2 class="text-2xl font-bold font-serif text-stone-800 flex items-center gap-2">
+                    <i class="fa-solid fa-book-open text-amber-800"></i> Dagboek van de Ontsnapping
+                </h2>
+                <p class="text-xs text-stone-500 italic">Verhaal & Aanwijzingen</p>
+            </div>
+
+            <div id="diaryContent" class="flex-grow overflow-y-auto text-sm leading-relaxed pr-2 font-serif text-stone-800 space-y-3">
+                <!-- Dynamisch gevuld -->
+            </div>
+
+            <div class="mt-4 pt-3 border-t border-stone-200 text-center">
+                <button onclick="closeDiary()" class="bg-amber-800 hover:bg-amber-700 text-white font-bold py-2.5 px-8 rounded-lg text-xs shadow transition active:scale-95">
+                    Sluit & Los Puzzel Op
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MEESLEPENDE TRANSITIE OVERLAY -->
+    <div id="fallTunnelOverlay" class="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center pointer-events-none opacity-0 transition-opacity duration-500 hidden">
+        <div class="text-center z-10 p-4">
+            <i class="fa-solid fa-angles-down text-red-500 text-6xl animate-bounce mb-4"></i>
+            <h2 class="horror-title text-4xl text-red-600 mb-2">JE VALT...</h2>
+            <p id="fallOverlaySubtitle" class="text-yellow-500 font-mono tracking-widest text-sm animate-pulse">NAAR HET VOLGENDE NIVEAU</p>
+        </div>
+    </div>
+
+    <!-- Compacte Footer -->
+    <footer class="bg-black/90 border-t border-zinc-900/60 py-2 text-center text-[10px] text-gray-600 flex-shrink-0 z-10">
+        <p>&copy; 2026 Zombie Escape Inc. Overleef de nacht door alle puzzels op te lossen!</p>
+    </footer>
+
+    <script>
+        let currentLevel = 1;
+        let soundEnabled = true;
+        let audioUnlocked = false;
+        let audioCtx = null;
+        let activeLoops = { level1: null, level2: null };
+
+        // Maak het audio-object aan voor Seppe In Chains (1).mp3
+        const bgMusic = new Audio();
+        bgMusic.src = "Seppe In Chains (1).mp3";
+        bgMusic.loop = true;
+        bgMusic.volume = 1.0;
+
+        // Custom notification alert function replacing window.alert()
+        function gameAlert(title, message, callback) {
+            const modal = document.getElementById('customModal');
+            document.getElementById('modalTitle').innerText = title;
+            document.getElementById('modalMessage').innerHTML = message;
+            const btn = document.getElementById('modalBtn');
+            btn.onclick = () => {
+                modal.classList.add('hidden');
+                if (callback) callback();
+            };
+            modal.classList.remove('hidden');
+        }
+
+        // Realtime synth en audio effecten
+        function initAudioEngine() {
+            if (audioCtx) return;
+            try {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            } catch(e) {
+                console.warn("AudioContext niet ondersteund door browser.");
+            }
+        }
+
+        function playSound(type, freq, glide, dur, vol) {
+            if (!soundEnabled) return;
+            initAudioEngine();
+            if (!audioCtx) return;
+            try {
+                const now = audioCtx.currentTime;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, now);
+                if (glide) osc.frequency.exponentialRampToValueAtTime(glide, now + dur);
+                gain.gain.setValueAtTime(vol, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + dur);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(now + dur);
+            } catch(e) {
+                console.error("Fout bij afspelen synth geluid:", e);
+            }
+        }
+
+        function playClickSound() { playSound('triangle', 600, 150, 0.15, 0.3); }
+        function playCorrectSound() { playSound('sine', 523, 784, 0.3, 0.2); }
+        function playErrorSound() { playSound('sawtooth', 140, 80, 0.4, 0.3); }
+        function playRumbleSound() { playSound('sawtooth', 45, 20, 3.0, 0.8); }
+        function playHammerSound() { playSound('sawtooth', 180, 30, 0.25, 0.4); }
+        function playScanningSound() { playSound('sine', 600, 1200, 0.8, 0.25); }
+
+        function playBackgroundMusic() {
+            if (audioUnlocked || !soundEnabled) return;
+            
+            bgMusic.play()
+                .then(() => {
+                    audioUnlocked = true;
+                    updateSoundUI(true);
+                    removeInteractionListeners();
+                })
+                .catch((err) => {
+                    console.warn("Wachten op interactie om Seppe In Chains (1).mp3 te starten...");
+                });
+        }
+
+        function removeInteractionListeners() {
+            ['click', 'touchstart', 'keydown', 'mousedown'].forEach(evt => {
+                window.removeEventListener(evt, playBackgroundMusic);
+            });
+        }
+
+        ['click', 'touchstart', 'keydown', 'mousedown'].forEach(evt => {
+            window.addEventListener(evt, playBackgroundMusic, { once: false });
+        });
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            updateSoundUI(soundEnabled);
+        }
+
+        function updateSoundUI(enabled) {
+            const btn = document.getElementById('soundToggle');
+            const icon = document.getElementById('soundIcon');
+            if (enabled) {
+                icon.className = "fa-solid fa-volume-high";
+                btn.className = "bg-gray-900 hover:bg-gray-800 text-yellow-500 px-3 py-1.5 rounded-lg border border-yellow-700/50 text-xs";
+                bgMusic.play().catch(e => console.warn(e));
+            } else {
+                icon.className = "fa-solid fa-volume-xmark";
+                btn.className = "bg-gray-950 hover:bg-gray-900 text-gray-500 px-3 py-1.5 rounded-lg border border-gray-800 text-xs";
+                bgMusic.pause();
+            }
+        }
+
+        // --- GENERAL ROUTER BETWEEN LEVELS ---
+        function changeLevel(level) {
+            currentLevel = level;
+            const selectEl = document.getElementById('levelSelect');
+            if (selectEl) selectEl.value = level;
+            
+            // Cancel active loops
+            if (activeLoops.level1) cancelAnimationFrame(activeLoops.level1);
+            if (activeLoops.level2) cancelAnimationFrame(activeLoops.level2);
+
+            // Hide views safely
+            document.getElementById('level1View').classList.add('hidden');
+            document.getElementById('level2View').classList.add('hidden');
+            document.getElementById('level3View').classList.add('hidden');
+
+            document.getElementById('badgeL1').className = "px-2 py-0.5 font-bold text-gray-500";
+            document.getElementById('badgeL2').className = "px-2 py-0.5 font-bold text-gray-500";
+            document.getElementById('badgeL3').className = "px-2 py-0.5 font-bold text-gray-500";
+
+            if (level === 1) {
+                document.getElementById('level1View').classList.remove('hidden');
+                document.getElementById('levelSubtitle').innerText = "Level 1: De Gevangeniscel (Ruimte)";
+                document.getElementById('badgeL1').className = "px-2 py-0.5 font-bold rounded bg-red-600 text-white shadow";
+                initLevel1();
+            } else if (level === 2) {
+                document.getElementById('level2View').classList.remove('hidden');
+                document.getElementById('levelSubtitle').innerText = "Level 2: De Woonkamer";
+                document.getElementById('badgeL2').className = "px-2 py-0.5 font-bold rounded bg-red-600 text-white shadow";
+                initLevel2();
+            } else if (level === 3) {
+                document.getElementById('level3View').classList.remove('hidden');
+                document.getElementById('levelSubtitle').innerText = "Level 3: Zombie Park (CCTV)";
+                document.getElementById('badgeL3').className = "px-2 py-0.5 font-bold rounded bg-red-600 text-white shadow";
+                initLevel3();
+            }
+        }
+
+        // --- LEVEL 1 ENGINE ---
+        let nextExpectedNumber = 1;
+        const targetWord = "WOONKAMER";
+        const l1Zombies = [];
+        let l1DugProgress = 0;
+        let l1Unlocked = false;
+
+        const zombieSvgs = [
+            `<svg viewBox="0 0 100 100" class="w-12 h-12 float-anim"><circle cx="50" cy="50" r="40" fill="#4d7c0f"/><circle cx="35" cy="40" r="6" fill="#fef08a"/><circle cx="35" cy="40" r="2" fill="#000"/><circle cx="65" cy="40" r="8" fill="#fca5a5"/><circle cx="65" cy="40" r="3" fill="#000"/><path d="M 30 70 Q 50 80 70 65" stroke="#1c1917" stroke-width="4" fill="none"/></svg>`,
+            `<svg viewBox="0 0 100 100" class="w-12 h-12 float-anim"><circle cx="50" cy="50" r="40" fill="#15803d"/><circle cx="35" cy="38" r="8" fill="#fca5a5"/><circle cx="35" cy="38" r="3" fill="#991b1b"/><circle cx="65" cy="42" r="6" fill="#fef08a"/><circle cx="65" cy="42" r="2" fill="#000"/><path d="M 35 68 L 65 68" stroke="#000" stroke-width="5"/></svg>`
+        ];
+
+        function initLevel1() {
+            const field = document.getElementById('zombieFieldL1');
+            field.innerHTML = '';
+            l1Zombies.length = 0;
+            nextExpectedNumber = 1;
+            l1DugProgress = 0;
+            l1Unlocked = false;
+
+            document.getElementById('digProgress').style.width = `0%`;
+            document.getElementById('lockStatusL1').innerHTML = "Status: Vergrendeld.";
+            document.getElementById('lockBtnL1').disabled = false;
+            document.getElementById('lockBtnL1').className = "bg-zinc-800 hover:bg-zinc-700 text-yellow-500 font-bold py-2 px-5 rounded-md border border-yellow-600/50 shadow-md transition text-xs";
+
+            const lettersAndNums = [
+                { char: 'W', num: 1 }, { char: 'O', num: 2 }, { char: 'O', num: 3 },
+                { char: 'N', num: 4 }, { char: 'K', num: 5 }, { char: 'A', num: 6 },
+                { char: 'M', num: 7 }, { char: 'E', num: 8 }, { char: 'R', num: 9 }
+            ];
+
+            lettersAndNums.forEach((data, index) => {
+                const zEl = document.createElement('div');
+                zEl.className = 'absolute cursor-pointer select-none z-20 transition-all duration-300';
+                
+                const startX = Math.random() * 80 + 10;
+                const startY = Math.random() * 45 + 35;
+                zEl.style.left = `${startX}%`;
+                zEl.style.top = `${startY}%`;
+
+                zEl.innerHTML = `
+                    <div class="flex flex-col items-center">
+                        ${zombieSvgs[index % zombieSvgs.length]}
+                        <div class="bg-red-950 border-2 border-red-500 rounded-full w-9 h-9 flex flex-col items-center justify-center -mt-2 shadow-lg z-30">
+                            <span class="text-[11px] font-black text-red-100 leading-none">${data.char}</span>
+                            <span class="text-[9px] font-bold text-yellow-400 leading-none mt-0.5">${data.num}</span>
+                        </div>
+                    </div>
+                `;
+
+                zEl.onclick = (e) => {
+                    e.stopPropagation();
+                    clickZombieL1(index);
+                };
+
+                field.appendChild(zEl);
+
+                l1Zombies.push({
+                    element: zEl,
+                    num: data.num,
+                    char: data.char,
+                    x: startX,
+                    y: startY,
+                    vx: (Math.random() - 0.5) * 0.8,
+                    vy: (Math.random() - 0.5) * 0.8,
+                    isLocked: false
+                });
+            });
+
+            updateL1Physics();
+        }
+
+        function clickZombieL1(index) {
+            const z = l1Zombies[index];
+            if (z.isLocked) return;
+
+            if (z.num === nextExpectedNumber) {
+                z.isLocked = true;
+                playCorrectSound();
+                
+                const badge = z.element.querySelector('div > div');
+                if (badge) {
+                    badge.className = "bg-emerald-950 border-2 border-emerald-500 rounded-full w-9 h-9 flex flex-col items-center justify-center -mt-2 shadow-lg scale-110";
+                }
+
+                nextExpectedNumber++;
+                if (nextExpectedNumber > 9) {
+                    setTimeout(() => {
+                        openLockOverlay();
+                        document.getElementById('codeInputL1').value = "WOONKAMER";
+                    }, 500);
+                }
+            } else {
+                playErrorSound();
+                nextExpectedNumber = 1;
+                l1Zombies.forEach((zombie) => {
+                    zombie.isLocked = false;
+                    const b = zombie.element.querySelector('div > div');
+                    if (b) {
+                        b.className = "bg-red-950 border-2 border-red-500 rounded-full w-9 h-9 flex flex-col items-center justify-center -mt-2 shadow-lg";
+                    }
+                });
+            }
+        }
+
+        function updateL1Physics() {
+            if (currentLevel !== 1) return;
+            l1Zombies.forEach((z) => {
+                if (z.isLocked) {
+                    const targetLeft = 5 + (z.num - 1) * 10;
+                    const targetTop = 15;
+                    z.x += (targetLeft - z.x) * 0.12;
+                    z.y += (targetTop - z.y) * 0.12;
+                } else {
+                    z.x += z.vx;
+                    z.y += z.vy;
+
+                    if (z.x <= 2 || z.x >= 92) z.vx = -z.vx;
+                    if (z.y <= 32 || z.y >= 82) z.vy = -z.vy;
+                }
+                z.element.style.left = `${z.x}%`;
+                z.element.style.top = `${z.y}%`;
+            });
+            activeLoops.level1 = requestAnimationFrame(updateL1Physics);
+        }
+
+        function openLockOverlay() {
+            document.getElementById('lockOverlayL1').classList.remove('hidden');
+        }
+        function closeLockOverlay() {
+            document.getElementById('lockOverlayL1').classList.add('hidden');
+        }
+
+        function checkCodeL1() {
+            const val = document.getElementById('codeInputL1').value.trim().toUpperCase();
+            if (val === targetWord) {
+                l1Unlocked = true;
+                playCorrectSound();
+                closeLockOverlay();
+                document.getElementById('lockStatusL1').innerHTML = "<span class='text-emerald-400 font-bold'><i class='fa-solid fa-lock-open'></i> GEOPEND!</span>";
+                document.getElementById('lockBtnL1').disabled = true;
+                document.getElementById('lockBtnL1').className = "bg-emerald-950 text-emerald-400 font-bold py-2 px-5 rounded-md border border-emerald-600/50 cursor-default text-xs";
+                gameAlert("KLUIS GEOPEND", "Het cijferslot springt open! Je kunt nu op het vloerkleed klikken om een tunnel te graven.");
+            } else {
+                playErrorSound();
+                document.getElementById('errorMsgL1').classList.remove('hidden');
+            }
+        }
+
+        function digCarpet() {
+            if (!l1Unlocked) {
+                playErrorSound();
+                gameAlert("FOUT", "Je moet eerst het cijferslot kraken voordat je kunt doorgraven!");
+                return;
+            }
+            playHammerSound();
+            l1DugProgress += 25;
+            document.getElementById('digProgress').style.width = `${l1DugProgress}%`;
+            if (l1DugProgress >= 100) {
+                document.getElementById('carpetBtn').classList.add('carpet-dug');
+                playRumbleSound();
+                executeGroundFall(2);
+            }
+        }
+
+        function executeGroundFall(targetLvl) {
+            const overlay = document.getElementById('fallTunnelOverlay');
+            overlay.classList.remove('hidden');
+            overlay.style.opacity = '1';
+
+            setTimeout(() => {
+                overlay.style.opacity = '0';
+                overlay.classList.add('hidden');
+                changeLevel(targetLvl);
+            }, 2000);
+        }
+
+        // --- LEVEL 2 ENGINE ---
+        let l2KeysFound = 0;
+        let l2ZombiesList = [];
+        let l2ObjectsSearched = { sofa: false, cabinet: false, toolbox: false };
+        let l2Mouse = { x: 300, y: 300 };
+        let l2Player = { x: 100, y: 200, angle: 0, isAttacking: false };
+
+        function initLevel2() {
+            l2KeysFound = 0;
+            l2ObjectsSearched = { sofa: false, cabinet: false, toolbox: false };
+            document.getElementById('keysFoundText').innerText = `Sleutels gevonden: 0 / 3`;
+            
+            const lock1 = document.getElementById('lock1');
+            const lock2 = document.getElementById('lock2');
+            const lock3 = document.getElementById('lock3');
+            const exitDoor = document.getElementById('exitDoor');
+            if (lock1) lock1.className = 'fa-solid fa-lock text-red-600';
+            if (lock2) lock2.className = 'fa-solid fa-lock text-red-600';
+            if (lock3) lock3.className = 'fa-solid fa-lock text-red-600';
+            if (exitDoor) exitDoor.classList.remove('door-transition');
+
+            spawnL2Zombies();
+            updateL2Physics();
+        }
+
+        function spawnL2Zombies() {
+            const container = document.getElementById('zombiesL2Container');
+            if (!container) return;
+            container.innerHTML = '';
+            l2ZombiesList = [];
+
+            for (let i = 0; i < 4; i++) {
+                const z = document.createElement('div');
+                z.className = 'absolute transition-all duration-100 w-10 h-10 cursor-pointer';
+                const startX = Math.random() * 50 + 30;
+                const startY = Math.random() * 50 + 20;
+                z.style.left = `${startX}%`;
+                z.style.top = `${startY}%`;
+
+                z.innerHTML = zombieSvgs[i % 2];
+                container.appendChild(z);
+
+                const index = i;
+                z.onclick = () => {
+                    hitZombieWithTap(index);
+                };
+
+                l2ZombiesList.push({
+                    element: z,
+                    x: startX,
+                    y: startY,
+                    vx: (Math.random() - 0.5) * 0.5,
+                    vy: (Math.random() - 0.5) * 0.5,
+                    alive: true
+                });
+            }
+        }
+
+        window.addEventListener('mousemove', (e) => {
+            if (currentLevel !== 2) return;
+            const area = document.getElementById('level2Area');
+            if (!area) return;
+            const rect = area.getBoundingClientRect();
+            l2Mouse.x = e.clientX - rect.left;
+            l2Mouse.y = e.clientY - rect.top;
+            
+            document.documentElement.style.setProperty('--mouse-x', `${e.clientX}px`);
+            document.documentElement.style.setProperty('--mouse-y', `${e.clientY}px`);
+        });
+
+        function hitZombieWithTap(idx) {
+            const z = l2ZombiesList[idx];
+            if (!z || !z.alive) return;
+            const area = document.getElementById('level2Area');
+            const rect = area.getBoundingClientRect();
+            const zPixelX = (z.x / 100) * rect.width;
+            const zPixelY = (z.y / 100) * rect.height;
+            const dist = Math.hypot(zPixelX - l2Player.x, zPixelY - l2Player.y);
+            
+            if (dist < 120) {
+                z.alive = false;
+                playHammerSound();
+                z.element.style.transform = 'scale(0) rotate(180deg)';
+                z.element.style.opacity = '0';
+            } else {
+                gameAlert("TE VER WEG", "Loop dichterbij de zombie om hem te kunnen raken!");
+            }
+        }
+
+        function inspectL2Furniture(element, name) {
+            const area = document.getElementById('level2Area');
+            if (!area) return;
+            const rect = area.getBoundingClientRect();
+            const elRect = element.getBoundingClientRect();
+            
+            const itemX = elRect.left - rect.left + elRect.width / 2;
+            const itemY = elRect.top - rect.top + elRect.height / 2;
+            const dist = Math.hypot(itemX - l2Player.x, itemY - l2Player.y);
+
+            if (dist > 160) {
+                playErrorSound();
+                gameAlert("TE VER WEG", "Je bent te ver weg om deze meubels te doorzoeken. Loop er dichter naartoe!");
+                return;
+            }
+
+            if (l2ObjectsSearched[name]) {
+                gameAlert("AL DOORZOCHT", "Je hebt hier al gezocht.");
+                return;
+            }
+
+            l2ObjectsSearched[name] = true;
+            l2KeysFound++;
+            playCorrectSound();
+            document.getElementById('keysFoundText').innerText = `Sleutels gevonden: ${l2KeysFound} / 3`;
+
+            if (l2KeysFound === 1) {
+                const l1 = document.getElementById('lock1');
+                if (l1) l1.className = 'fa-solid fa-lock-open text-emerald-500';
+            }
+            if (l2KeysFound === 2) {
+                const l2 = document.getElementById('lock2');
+                if (l2) l2.className = 'fa-solid fa-lock-open text-emerald-500';
+            }
+            if (l2KeysFound === 3) {
+                const l3 = document.getElementById('lock3');
+                const exitDoor = document.getElementById('exitDoor');
+                if (l3) l3.className = 'fa-solid fa-lock-open text-emerald-500';
+                if (exitDoor) exitDoor.classList.add('door-transition');
+                gameAlert("SLEUTEL GEPAKT", `Je hebt de laatste sleutel gevonden in de ${name}! De deur is geopend.`);
+            } else {
+                gameAlert("SLEUTEL GEPAKT", `Je vond een sleutel in de ${name}!`);
+            }
+        }
+
+        function updateL2Physics() {
+            if (currentLevel !== 2) return;
+
+            const area = document.getElementById('level2Area');
+            if (area) {
+                const rect = area.getBoundingClientRect();
+
+                l2Player.x += (l2Mouse.x - l2Player.x) * 0.15;
+                l2Player.y += (l2Mouse.y - l2Player.y) * 0.15;
+
+                l2Player.x = Math.max(24, Math.min(rect.width - 24, l2Player.x));
+                l2Player.y = Math.max(24, Math.min(rect.height - 24, l2Player.y));
+
+                const playerEl = document.getElementById('playerL2');
+                if (playerEl) {
+                    playerEl.style.left = `${l2Player.x - 24}px`;
+                    playerEl.style.top = `${l2Player.y - 24}px`;
+                }
+
+                const angleRad = Math.atan2(l2Mouse.y - l2Player.y, l2Mouse.x - l2Player.x);
+                l2Player.angle = angleRad * (180 / Math.PI);
+                const visualEl = document.getElementById('playerL2Visual');
+                if (visualEl) {
+                    visualEl.style.transform = `rotate(${l2Player.angle}deg)`;
+                }
+
+                l2ZombiesList.forEach((z) => {
+                    if (!z.alive) return;
+                    z.x += z.vx;
+                    z.y += z.vy;
+
+                    if (z.x < 5 || z.x > 90) z.vx = -z.vx;
+                    if (z.y < 10 || z.y > 85) z.vy = -z.vy;
+
+                    z.element.style.left = `${z.x}%`;
+                    z.element.style.top = `${z.y}%`;
+                });
+
+                if (l2KeysFound >= 3 && l2Player.x >= rect.width - 80) {
+                    executeGroundFall(3);
+                    return;
+                }
+            }
+
+            activeLoops.level2 = requestAnimationFrame(updateL2Physics);
+        }
+
+        // --- LEVEL 3 ENGINE (CCTV PLATTEGROND GEBASEERD OP UNNAMED.PNG) ---
+        let l3TargetAcquired = false;
+        let l3SelectedCoord = "";
+
+        function initLevel3() {
+            l3TargetAcquired = false;
+            l3SelectedCoord = "";
+            document.getElementById('coordTrackerL3').innerText = "--";
+            document.getElementById('codeInputL3').value = "";
+            document.getElementById('targetIndicatorL3').classList.add('hidden');
+
+            const mapContainer = document.getElementById('mapContainerL3');
+            
+            // Stel de zaklampstraal in op de kermisplattegrond
+            document.documentElement.style.setProperty('--light-radius', '120px');
+            document.documentElement.style.setProperty('--light-inner', '0%');
+            document.documentElement.style.setProperty('--light-outer', '60%');
+
+            // Muis/Touch tracking over de plattegrond unnamed.png
+            mapContainer.onmousemove = function(e) {
+                if (l3TargetAcquired) return;
+                updateL3Flashlight(e);
+            };
+
+            mapContainer.ontouchmove = function(e) {
+                if (l3TargetAcquired) return;
+                if (e.touches && e.touches[0]) {
+                    updateL3Flashlight(e.touches[0]);
+                }
+            };
+
+            // Klikken/Tappen op de kermisplattegrond berekent de gridcoördinaten
+            mapContainer.onclick = function(e) {
+                if (l3TargetAcquired) return;
+                calculateGridCoord(e);
+                checkGridCodeL3();
+            };
+        }
+
+        function updateL3Flashlight(eventSource) {
+            const mapContainer = document.getElementById('mapContainerL3');
+            const rect = mapContainer.getBoundingClientRect();
+            
+            const x = eventSource.clientX - rect.left;
+            const y = eventSource.clientY - rect.top;
+
+            // Update CSS variabelen voor de flashlight radial-gradient
+            mapContainer.style.setProperty('--mouse-x', `${x}px`);
+            mapContainer.style.setProperty('--mouse-y', `${y}px`);
+
+            // Bereken live coördinaten (10 Kolommen: 1-10, 7 Rijen: A-G)
+            const col = Math.floor((x / rect.width) * 10) + 1;
+            const rowIdx = Math.floor((y / rect.height) * 7);
+            const row = String.fromCharCode(65 + rowIdx); // 65 is 'A'
+
+            if (col >= 1 && col <= 10 && rowIdx >= 0 && rowIdx < 7) {
+                l3SelectedCoord = row + col;
+                document.getElementById('coordTrackerL3').innerText = l3SelectedCoord;
+                document.getElementById('codeInputL3').value = l3SelectedCoord;
+            }
+        }
+
+        function calculateGridCoord(eventSource) {
+            const mapContainer = document.getElementById('mapContainerL3');
+            const rect = mapContainer.getBoundingClientRect();
+            
+            const x = eventSource.clientX - rect.left;
+            const y = eventSource.clientY - rect.top;
+
+            const col = Math.floor((x / rect.width) * 10) + 1;
+            const rowIdx = Math.floor((y / rect.height) * 7);
+            const row = String.fromCharCode(65 + rowIdx);
+
+            if (col >= 1 && col <= 10 && rowIdx >= 0 && rowIdx < 7) {
+                l3SelectedCoord = row + col;
+                document.getElementById('coordTrackerL3').innerText = l3SelectedCoord;
+                document.getElementById('codeInputL3').value = l3SelectedCoord;
+            }
+        }
+
+        function setGridInput(coord) {
+            playClickSound();
+            document.getElementById('codeInputL3').value = coord;
+            l3SelectedCoord = coord;
+            document.getElementById('coordTrackerL3').innerText = coord;
+        }
+
+        function checkGridCodeL3() {
+            const code = document.getElementById('codeInputL3').value.trim().toUpperCase();
+            if (code === "B5") {
+                l3TargetAcquired = true;
+                playScanningSound();
+                
+                // Activeer spotligheffect op zombie
+                const mapContainer = document.getElementById('mapContainerL3');
+                const rect = mapContainer.getBoundingClientRect();
+                
+                // Bereken exact centrum van B5 (2e rij van 7, 5e kolom van 10)
+                // Rij B = Index 1 (indexen 0 t/m 6). Kolom 5 = Index 4 (indexen 0 t/m 9).
+                const centerXPct = (4.5 / 10);
+                const queryYPct = (1.5 / 7);
+
+                const targetX = rect.width * centerXPct;
+                const targetY = rect.height * queryYPct;
+
+                // Verruim zaklampstraal naar 100% om plattegrond te tonen
+                mapContainer.style.setProperty('--mouse-x', `${targetX}px`);
+                mapContainer.style.setProperty('--mouse-y', `${targetY}px`);
+                document.documentElement.style.setProperty('--light-radius', '400px');
+                document.documentElement.style.setProperty('--light-inner', '40%');
+                document.documentElement.style.setProperty('--light-outer', '100%');
+
+                // Plaats vizierindicator over de zombie in B5
+                const targetIndicator = document.getElementById('targetIndicatorL3');
+                targetIndicator.style.left = `${targetX - 24}px`;
+                targetIndicator.style.top = `${targetY - 24}px`;
+                targetIndicator.classList.remove('hidden');
+
+                setTimeout(() => {
+                    playCorrectSound();
+                    gameAlert("TARGET ACQUIRED", "CCTV Lock-on succesvol! De verborgen zombie is gedetecteerd in vak <strong>B5</strong>. Het stroomnetwerk herstart en de kermispoorten openen zich!", finishGame);
+                }, 1000);
+            } else {
+                playErrorSound();
+                // Toon rood storingschermpje op de terminal
+                const monitor = document.getElementById('coordTrackerL3');
+                monitor.className = "text-red-500 font-bold bg-red-950 px-2 py-0.5 rounded text-xs animate-bounce";
+                monitor.innerText = "ERROR - GEEN ZOMBIE";
+                
+                setTimeout(() => {
+                    monitor.className = "text-white font-bold bg-zinc-800 px-2 py-0.5 rounded text-xs";
+                    monitor.innerText = l3SelectedCoord || "--";
+                }, 1500);
+            }
+        }
+
+        function finishGame() {
+            bgMusic.pause();
+            document.body.innerHTML = `
+                <div class="min-h-screen bg-black flex flex-col items-center justify-center p-4 text-center">
+                    <h2 class="horror-title text-5xl text-red-500 mb-6 animate-pulse">GEFELICITEERD!</h2>
+                    <p class="text-xs text-gray-400 max-w-md leading-relaxed">
+                        Je hebt de gevangeniscel ontgrendeld, de top-down zombie-woonkamer overleefd en door middel van de CCTV-monitors de kermisplattegrond in sector B5 gezuiverd! Je bent officieel ontsnapt uit de Zombie Escape!
+                    </p>
+                    <button onclick="window.location.reload()" class="mt-8 bg-red-700 hover:bg-red-600 font-bold px-8 py-3 rounded text-xs text-white uppercase tracking-widest transition active:scale-95">Speel opnieuw vanaf het begin</button>
+                </div>
+            `;
+        }
+
+        // --- DIARY SYSTEM ---
+        const diaryEntries = {
+            1: `
+                <p class="font-bold text-red-600">"Celblok Alpha - Gevangen in de Ruimte"</p>
+                <p>Er klopt iets niet... de zombies lopen rond met vreemde combinaties van letters en cijfers op hun buik.</p>
+                <p class="bg-amber-100/90 p-2.5 rounded border-l-4 border-amber-500 italic text-[11px] text-stone-700">
+                    <strong>Aanwijzing:</strong> Zoek en klik op de zombies in opeenvolgende volgorde van hun nummers (1 tot en met 9). Als je de letters van deze volgorde achter elkaar zet, vormen ze de ontgrendelingscode. (WOONKAMER)
+                </p>
+            `,
+            2: `
+                <p class="font-bold text-red-600">"De Verlaten Woonkamer"</p>
+                <p>We zijn door de vloer naar beneden gestort. Er dwalen hier gevaarlijke monsters rond, maar zolang we op afstand blijven vallen ze niet direct aan.</p>
+                <p class="bg-amber-100/90 p-2.5 rounded border-l-4 border-amber-500 italic text-[11px] text-stone-700">
+                    <strong>Aanwijzing:</strong> Tik op de sofa, de kast en de kist om 3 sleutels te verzamelen. Sla zombies weg door dichtbij ze te komen en erop te tikken!
+                </p>
+            `,
+            3: `
+                <p class="font-bold text-red-600">"De Kermis Beveiligingsterminal"</p>
+                <p>Je hebt de woonkamerpoort geopend en bent op een computerruimte gestuit. De plattegrond van het Zombie Park staat vol met gridcellen A1 t/m G10.</p>
+                <p class="bg-amber-100/90 p-2.5 rounded border-l-4 border-amber-500 italic text-[11px] text-stone-700">
+                    <strong>Aanwijzing:</strong> Schijn met de zaklamp over de plattegrond. Zoek het vak waar de kleine groene zombie stilstaat. Het vak bevindt zich direct onder de kasteelruïne (A5) en naast het kermis-entreebord (B6) -- coördinaat **B5**!
+                </p>
+            `
+        };
+
+        function openDiary() {
+            const text = diaryEntries[currentLevel] || diaryEntries[1];
+            document.getElementById('diaryContent').innerHTML = text;
+            document.getElementById('diaryOverlay').classList.remove('hidden');
+        }
+
+        function closeDiary() {
+            document.getElementById('diaryOverlay').classList.add('hidden');
+        }
+
+        window.onload = function () {
+            changeLevel(1);
+        }
+    </script>
+</body>
+</html>

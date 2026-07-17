@@ -1,0 +1,2477 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Retro Arcade School Showroom 🕹️</title>
+  
+  <!-- Fallback retro fonts & online Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Press+Start+2P&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    /* ----------------------------------
+       CSS VARIABLES & THEME SYSTEM
+    ---------------------------------- */
+    :root {
+      --bg-dark: #0b0f19;
+      --bg-card: #111827;
+      --bg-accent: #1f2937;
+      
+      /* Neon Accent Colors */
+      --neon-cyan: #00f0ff;
+      --neon-magenta: #ff007f;
+      --neon-green: #39ff14;
+      --neon-yellow: #fffb00;
+      
+      /* Glowing Shadows */
+      --glow-cyan: 0 0 10px rgba(0, 240, 255, 0.6), 0 0 20px rgba(0, 240, 255, 0.2);
+      --glow-magenta: 0 0 10px rgba(255, 0, 127, 0.6), 0 0 20px rgba(255, 0, 127, 0.2);
+      --glow-green: 0 0 10px rgba(57, 255, 20, 0.6), 0 0 20px rgba(57, 255, 20, 0.2);
+      --glow-yellow: 0 0 10px rgba(255, 251, 0, 0.6), 0 0 20px rgba(255, 251, 0, 0.2);
+      
+      /* Font stacks */
+      --font-arcade: 'Press Start 2P', 'Courier New', Courier, monospace;
+      --font-retro: 'Orbitron', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-body: 'Inter', -apple-system, sans-serif;
+    }
+
+    /* Reset & Base styles */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: #f3f4f6;
+      font-family: var(--font-body);
+      overflow-x: hidden;
+      min-height: 100vh;
+      position: relative;
+    }
+
+    /* Grid background effect */
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: 
+        linear-gradient(rgba(18, 24, 38, 0.7) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(18, 24, 38, 0.7) 1px, transparent 1px);
+      background-size: 30px 30px;
+      z-index: -2;
+      pointer-events: none;
+    }
+
+    /* CRT scanline overlay simulation */
+    body::after {
+      content: "";
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.15) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+      background-size: 100% 4px, 6px 100%;
+      z-index: 9999;
+      pointer-events: none;
+    }
+
+    /* ----------------------------------
+       HEADER SECTION
+    ---------------------------------- */
+    header {
+      padding: 30px 20px;
+      border-bottom: 3px solid var(--neon-magenta);
+      box-shadow: 0 4px 15px rgba(255, 0, 127, 0.3);
+      background-color: rgba(11, 15, 25, 0.95);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .header-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+
+    .logo-area {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .logo-title {
+      font-family: var(--font-arcade);
+      font-size: 1.8rem;
+      color: #fff;
+      text-shadow: var(--glow-magenta);
+      letter-spacing: -1px;
+    }
+
+    .cursor-blink {
+      display: inline-block;
+      width: 12px;
+      height: 1.8rem;
+      background-color: var(--neon-magenta);
+      margin-left: 5px;
+      vertical-align: bottom;
+      animation: blink 0.8s infinite;
+      box-shadow: var(--glow-magenta);
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+
+    .logo-subtitle {
+      font-family: var(--font-retro);
+      font-size: 0.9rem;
+      color: var(--neon-cyan);
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      text-shadow: var(--glow-cyan);
+    }
+
+    /* Coin Credits System styling */
+    .credits-system {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .coin-display {
+      font-family: var(--font-arcade);
+      font-size: 1rem;
+      background-color: rgba(0, 0, 0, 0.5);
+      border: 2px solid var(--neon-yellow);
+      padding: 10px 15px;
+      border-radius: 6px;
+      color: var(--neon-yellow);
+      text-shadow: var(--glow-yellow);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: inset 0 0 5px rgba(255, 251, 0, 0.3);
+    }
+
+    .coin-btn {
+      font-family: var(--font-arcade);
+      font-size: 0.9rem;
+      background: transparent;
+      color: var(--neon-yellow);
+      border: 3px solid var(--neon-yellow);
+      padding: 12px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: var(--glow-yellow);
+      text-shadow: var(--glow-yellow);
+      transition: all 0.2s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .coin-btn::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -50%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 251, 0, 0.4), transparent);
+      transform: skewX(-20deg);
+      transition: 0.75s;
+    }
+
+    .coin-btn:hover {
+      background-color: var(--neon-yellow);
+      color: var(--bg-dark);
+      text-shadow: none;
+      transform: scale(1.05);
+      box-shadow: 0 0 20px var(--neon-yellow);
+    }
+
+    .coin-btn:hover::after {
+      left: 150%;
+    }
+
+    .coin-btn:active {
+      transform: scale(0.95);
+    }
+
+    /* ----------------------------------
+       DASHBOARD CONTROLS (SEARCH & FILTERS)
+    ---------------------------------- */
+    .controls-container {
+      max-width: 1200px;
+      margin: 30px auto;
+      padding: 0 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .search-row {
+      display: flex;
+      gap: 15px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .search-wrapper {
+      position: relative;
+      flex-grow: 1;
+      min-width: 280px;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 15px 15px 15px 45px;
+      background-color: var(--bg-card);
+      border: 2px solid var(--neon-cyan);
+      border-radius: 8px;
+      color: #fff;
+      font-size: 1rem;
+      font-family: var(--font-retro);
+      outline: none;
+      box-shadow: inset 0 0 5px rgba(0, 240, 255, 0.2);
+      transition: all 0.3s ease;
+    }
+
+    .search-input:focus {
+      border-color: var(--neon-cyan);
+      box-shadow: var(--glow-cyan), inset 0 0 10px rgba(0, 240, 255, 0.3);
+    }
+
+    .search-wrapper::before {
+      content: ">";
+      position: absolute;
+      left: 20px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-family: var(--font-arcade);
+      color: var(--neon-cyan);
+      font-size: 1.2rem;
+      text-shadow: var(--glow-cyan);
+    }
+
+    /* Action Buttons (Scan folder) */
+    .btn-scan {
+      font-family: var(--font-arcade);
+      font-size: 0.8rem;
+      background: transparent;
+      color: var(--neon-green);
+      border: 2px solid var(--neon-green);
+      padding: 15px 25px;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: var(--glow-green);
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-scan:hover {
+      background-color: var(--neon-green);
+      color: var(--bg-dark);
+      transform: scale(1.03);
+      box-shadow: 0 0 20px var(--neon-green);
+    }
+
+    .btn-clear {
+      font-family: var(--font-arcade);
+      font-size: 0.8rem;
+      background: transparent;
+      color: var(--neon-magenta);
+      border: 2px solid var(--neon-magenta);
+      padding: 15px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: var(--glow-magenta);
+      transition: all 0.2s ease;
+      display: none; /* Only visible when custom games exist */
+    }
+
+    .btn-clear:hover {
+      background-color: var(--neon-magenta);
+      color: var(--bg-dark);
+      transform: scale(1.03);
+      box-shadow: 0 0 20px var(--neon-magenta);
+    }
+
+    /* Filter Badges Row */
+    .filters-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .filter-label {
+      font-family: var(--font-retro);
+      font-size: 0.9rem;
+      color: #9ca3af;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-right: 5px;
+    }
+
+    .filter-badge {
+      font-family: var(--font-retro);
+      font-size: 0.9rem;
+      font-weight: 700;
+      background-color: var(--bg-card);
+      border: 2px solid var(--bg-accent);
+      color: #9ca3af;
+      padding: 10px 20px;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .filter-badge:hover {
+      border-color: #9ca3af;
+      color: #fff;
+    }
+
+    /* Filter Active States */
+    .filter-badge.active[data-genre="all"] {
+      border-color: #fff;
+      color: #fff;
+      box-shadow: 0 0 10px rgba(255, 255, 255, 0.4);
+    }
+
+    .filter-badge.active[data-genre="actie"] {
+      border-color: var(--neon-magenta);
+      color: var(--neon-magenta);
+      text-shadow: var(--glow-magenta);
+      box-shadow: var(--glow-magenta);
+    }
+
+    .filter-badge.active[data-genre="puzzel"] {
+      border-color: var(--neon-cyan);
+      color: var(--neon-cyan);
+      text-shadow: var(--glow-cyan);
+      box-shadow: var(--glow-cyan);
+    }
+
+    .filter-badge.active[data-genre="platform"] {
+      border-color: var(--neon-green);
+      color: var(--neon-green);
+      text-shadow: var(--glow-green);
+      box-shadow: var(--glow-green);
+    }
+
+    .filter-badge.active[data-genre="overig"] {
+      border-color: var(--neon-yellow);
+      color: var(--neon-yellow);
+      text-shadow: var(--glow-yellow);
+      box-shadow: var(--glow-yellow);
+    }
+
+    /* ----------------------------------
+       GAMES GRID
+    ---------------------------------- */
+    .main-content {
+      max-width: 1200px;
+      margin: 0 auto 60px auto;
+      padding: 0 20px;
+    }
+
+    .games-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 30px;
+    }
+
+    .no-results {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 60px 20px;
+      background: var(--bg-card);
+      border: 2px dashed var(--neon-magenta);
+      border-radius: 12px;
+      box-shadow: inset 0 0 10px rgba(255, 0, 127, 0.1);
+    }
+
+    .no-results h3 {
+      font-family: var(--font-arcade);
+      font-size: 1.2rem;
+      color: var(--neon-magenta);
+      text-shadow: var(--glow-magenta);
+      margin-bottom: 15px;
+    }
+
+    .no-results p {
+      font-family: var(--font-retro);
+      color: #9ca3af;
+    }
+
+    /* Single Game Card */
+    .game-card {
+      background-color: var(--bg-card);
+      border: 3px solid var(--bg-accent);
+      border-radius: 12px;
+      padding: 25px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+      overflow: hidden;
+    }
+
+    /* Hover card neon-glow effects depending on category */
+    .game-card[data-cat="ACTIE"]:hover {
+      border-color: var(--neon-magenta);
+      box-shadow: var(--glow-magenta);
+      transform: translateY(-8px);
+    }
+
+    .game-card[data-cat="PUZZEL"]:hover {
+      border-color: var(--neon-cyan);
+      box-shadow: var(--glow-cyan);
+      transform: translateY(-8px);
+    }
+
+    .game-card[data-cat="PLATFORM"]:hover {
+      border-color: var(--neon-green);
+      box-shadow: var(--glow-green);
+      transform: translateY(-8px);
+    }
+
+    .game-card[data-cat="OVERIG"]:hover,
+    .game-card:hover {
+      border-color: var(--neon-yellow);
+      box-shadow: var(--glow-yellow);
+      transform: translateY(-8px);
+    }
+
+    /* Card Details */
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+
+    .author-name {
+      font-family: var(--font-retro);
+      font-weight: 900;
+      color: #9ca3af;
+      font-size: 0.85rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .author-name::before {
+      content: "🕹️";
+    }
+
+    .category-badge {
+      font-family: var(--font-arcade);
+      font-size: 0.6rem;
+      padding: 6px 12px;
+      border-radius: 4px;
+      text-transform: uppercase;
+    }
+
+    .badge-actie {
+      background-color: rgba(255, 0, 127, 0.15);
+      border: 1px solid var(--neon-magenta);
+      color: var(--neon-magenta);
+      text-shadow: var(--glow-magenta);
+    }
+
+    .badge-puzzel {
+      background-color: rgba(0, 240, 255, 0.15);
+      border: 1px solid var(--neon-cyan);
+      color: var(--neon-cyan);
+      text-shadow: var(--glow-cyan);
+    }
+
+    .badge-platform {
+      background-color: rgba(57, 255, 20, 0.15);
+      border: 1px solid var(--neon-green);
+      color: var(--neon-green);
+      text-shadow: var(--glow-green);
+    }
+
+    .badge-overig {
+      background-color: rgba(255, 251, 0, 0.15);
+      border: 1px solid var(--neon-yellow);
+      color: var(--neon-yellow);
+      text-shadow: var(--glow-yellow);
+    }
+
+    .game-title {
+      font-family: var(--font-retro);
+      font-size: 1.4rem;
+      font-weight: 900;
+      color: #fff;
+      margin-bottom: 12px;
+      letter-spacing: 1px;
+      line-height: 1.2;
+    }
+
+    .game-desc {
+      color: #9ca3af;
+      font-size: 0.95rem;
+      line-height: 1.6;
+      margin-bottom: 25px;
+      flex-grow: 1;
+    }
+
+    /* Pixel art placeholder graphics using CSS/SVG */
+    .pixel-art-container {
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+      opacity: 0.85;
+      color: rgba(255, 255, 255, 0.4);
+    }
+
+    .play-btn {
+      font-family: var(--font-arcade);
+      font-size: 0.9rem;
+      background: transparent;
+      color: #fff;
+      border: 3px solid #fff;
+      padding: 15px 0;
+      width: 100%;
+      border-radius: 8px;
+      cursor: pointer;
+      text-align: center;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      display: block;
+      font-weight: 700;
+      letter-spacing: 1px;
+    }
+
+    /* Buttons color match category on hover */
+    .game-card[data-cat="ACTIE"] .play-btn {
+      border-color: var(--neon-magenta);
+      color: var(--neon-magenta);
+      text-shadow: var(--glow-magenta);
+      box-shadow: 0 0 5px rgba(255, 0, 127, 0.4);
+    }
+    .game-card[data-cat="ACTIE"] .play-btn:hover {
+      background-color: var(--neon-magenta);
+      color: var(--bg-dark);
+      text-shadow: none;
+      box-shadow: var(--glow-magenta);
+    }
+
+    .game-card[data-cat="PUZZEL"] .play-btn {
+      border-color: var(--neon-cyan);
+      color: var(--neon-cyan);
+      text-shadow: var(--glow-cyan);
+      box-shadow: 0 0 5px rgba(0, 240, 255, 0.4);
+    }
+    .game-card[data-cat="PUZZEL"] .play-btn:hover {
+      background-color: var(--neon-cyan);
+      color: var(--bg-dark);
+      text-shadow: none;
+      box-shadow: var(--glow-cyan);
+    }
+
+    .game-card[data-cat="PLATFORM"] .play-btn {
+      border-color: var(--neon-green);
+      color: var(--neon-green);
+      text-shadow: var(--glow-green);
+      box-shadow: 0 0 5px rgba(57, 255, 20, 0.4);
+    }
+    .game-card[data-cat="PLATFORM"] .play-btn:hover {
+      background-color: var(--neon-green);
+      color: var(--bg-dark);
+      text-shadow: none;
+      box-shadow: var(--glow-green);
+    }
+
+    .game-card[data-cat="OVERIG"] .play-btn,
+    .play-btn {
+      border-color: var(--neon-yellow);
+      color: var(--neon-yellow);
+      text-shadow: var(--glow-yellow);
+      box-shadow: 0 0 5px rgba(255, 251, 0, 0.4);
+    }
+    .game-card[data-cat="OVERIG"] .play-btn:hover,
+    .play-btn:hover {
+      background-color: var(--neon-yellow);
+      color: var(--bg-dark);
+      text-shadow: none;
+      box-shadow: var(--glow-yellow);
+    }
+
+    /* ----------------------------------
+       STUDENT ZONE SECTION
+    ---------------------------------- */
+    .student-zone {
+      max-width: 1200px;
+      margin: 80px auto 40px auto;
+      padding: 0 20px;
+    }
+
+    .terminal-card {
+      background-color: #05070d;
+      border: 3px dashed var(--neon-green);
+      box-shadow: 0 0 15px rgba(57, 255, 20, 0.15);
+      border-radius: 12px;
+      padding: 40px;
+      position: relative;
+    }
+
+    .terminal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 25px;
+      border-bottom: 1px solid rgba(57, 255, 20, 0.3);
+      padding-bottom: 15px;
+    }
+
+    .terminal-title {
+      font-family: var(--font-arcade);
+      font-size: 1.1rem;
+      color: var(--neon-green);
+      text-shadow: var(--glow-green);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .terminal-dots {
+      display: flex;
+      gap: 8px;
+    }
+
+    .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+    .dot-r { background-color: #ef4444; }
+    .dot-y { background-color: #eab308; }
+    .dot-g { background-color: #22c55e; }
+
+    .terminal-body p {
+      color: #a7f3d0;
+      line-height: 1.7;
+      margin-bottom: 25px;
+      font-size: 0.95rem;
+    }
+
+    .code-container {
+      position: relative;
+      background-color: rgba(0, 0, 0, 0.6);
+      border: 1px solid rgba(57, 255, 20, 0.3);
+      border-radius: 6px;
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+
+    .code-lang {
+      position: absolute;
+      top: 10px;
+      right: 15px;
+      font-family: var(--font-retro);
+      font-size: 0.75rem;
+      color: rgba(57, 255, 20, 0.5);
+      text-transform: uppercase;
+    }
+
+    pre {
+      padding: 20px;
+      overflow-x: auto;
+      margin: 0;
+    }
+
+    code {
+      font-family: 'Courier New', Courier, monospace;
+      color: #39ff14;
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+
+    .btn-copy {
+      font-family: var(--font-arcade);
+      font-size: 0.85rem;
+      background: transparent;
+      color: var(--neon-green);
+      border: 2px solid var(--neon-green);
+      padding: 15px 30px;
+      border-radius: 6px;
+      cursor: pointer;
+      box-shadow: var(--glow-green);
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .btn-copy:hover {
+      background-color: var(--neon-green);
+      color: #000;
+      box-shadow: 0 0 20px var(--neon-green);
+      transform: scale(1.02);
+    }
+
+    .btn-copy:active {
+      transform: scale(0.98);
+    }
+
+    /* Custom Toast Notification styling */
+    .toast {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      background: #0b0f19;
+      border: 2px solid var(--neon-green);
+      box-shadow: var(--glow-green);
+      border-radius: 8px;
+      padding: 15px 25px;
+      color: #fff;
+      font-family: var(--font-retro);
+      font-weight: 700;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    .toast.error-toast {
+      border-color: var(--neon-magenta);
+      box-shadow: var(--glow-magenta);
+    }
+
+    /* ----------------------------------
+       FOOTER
+    ---------------------------------- */
+    footer {
+      text-align: center;
+      padding: 40px 20px;
+      border-top: 1px solid var(--bg-accent);
+      color: #4b5563;
+      font-family: var(--font-retro);
+      font-size: 0.85rem;
+      letter-spacing: 1px;
+    }
+
+    footer p {
+      margin-bottom: 8px;
+    }
+
+    footer a {
+      color: #6b7280;
+      text-decoration: none;
+      transition: color 0.2s ease;
+    }
+
+    footer a:hover {
+      color: var(--neon-cyan);
+    }
+
+    /* ----------------------------------
+       RESPONSIVENESS
+    ---------------------------------- */
+    @media (max-width: 768px) {
+      .header-container {
+        flex-direction: column;
+        text-align: center;
+      }
+      .logo-area {
+        align-items: center;
+      }
+      .credits-system {
+        width: 100%;
+        justify-content: center;
+      }
+      .games-grid {
+        grid-template-columns: 1fr;
+      }
+      .search-row {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .btn-scan {
+        justify-content: center;
+      }
+    }
+
+    /* CodeFever Banner */
+    .camp-intro-banner {
+      background-color: rgba(0, 240, 255, 0.05);
+      border: 2px solid var(--neon-cyan);
+      box-shadow: var(--glow-cyan);
+      border-radius: 12px;
+      padding: 25px;
+      margin-bottom: 20px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .camp-intro-banner h3 {
+      font-family: var(--font-arcade);
+      font-size: 0.95rem;
+      color: var(--neon-cyan);
+      text-shadow: var(--glow-cyan);
+      margin-bottom: 12px;
+    }
+    .camp-intro-banner p {
+      font-family: var(--font-body);
+      font-size: 1rem;
+      line-height: 1.6;
+      color: #e5e7eb;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    .camp-intro-banner .highlight-magenta {
+      color: var(--neon-magenta);
+      font-weight: bold;
+      text-shadow: 0 0 5px rgba(255, 0, 127, 0.4);
+    }
+    .camp-intro-banner .highlight-yellow {
+      color: var(--neon-yellow);
+      font-weight: bold;
+      text-shadow: 0 0 5px rgba(255, 251, 0, 0.4);
+    }
+
+    /* Card Edit Button */
+    .card-edit-btn {
+      background: transparent;
+      border: none;
+      color: #6b7280;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: all 0.2s;
+      vertical-align: middle;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px;
+      border-radius: 4px;
+      margin-left: 8px;
+    }
+    .card-edit-btn:hover {
+      color: var(--neon-cyan);
+      text-shadow: var(--glow-cyan);
+      background-color: rgba(255, 255, 255, 0.05);
+    }
+    
+    /* Edit Inputs inside Card */
+    .edit-input {
+      width: 100%;
+      padding: 8px 12px;
+      margin-bottom: 12px;
+      background: rgba(0, 0, 0, 0.5);
+      border: 2px solid var(--neon-cyan);
+      border-radius: 6px;
+      color: #fff;
+      font-family: var(--font-retro);
+      font-size: 0.85rem;
+      outline: none;
+      box-shadow: inset 0 0 5px rgba(0, 240, 255, 0.1);
+    }
+    .edit-input:focus {
+      border-color: var(--neon-cyan);
+      box-shadow: var(--glow-cyan);
+    }
+    .edit-textarea {
+      font-family: var(--font-body);
+      height: 90px;
+      resize: none;
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+    .edit-select {
+      font-family: var(--font-retro);
+      background-color: var(--bg-card);
+      cursor: pointer;
+    }
+    .edit-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+    }
+    .edit-btn {
+      font-family: var(--font-arcade);
+      font-size: 0.7rem;
+      padding: 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      border: 2px solid;
+      background: transparent;
+      flex-grow: 1;
+      text-align: center;
+      transition: all 0.2s;
+    }
+    .edit-btn-save {
+      border-color: var(--neon-green);
+      color: var(--neon-green);
+      box-shadow: var(--glow-green);
+    }
+    .edit-btn-save:hover {
+      background-color: var(--neon-green);
+      color: var(--bg-dark);
+      box-shadow: 0 0 15px var(--neon-green);
+    }
+    .edit-btn-cancel {
+      border-color: var(--neon-magenta);
+      color: var(--neon-magenta);
+      box-shadow: var(--glow-magenta);
+    }
+    .edit-btn-cancel:hover {
+      background-color: var(--neon-magenta);
+      color: var(--bg-dark);
+      box-shadow: 0 0 15px var(--neon-magenta);
+    }
+
+    /* ----------------------------------
+       ARCADE INTRO SCREEN & COIN SLOT
+    ---------------------------------- */
+    #arcade-intro {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: var(--bg-dark);
+      background-image: 
+        radial-gradient(circle at center, rgba(16, 24, 48, 0.85) 0%, #0b0f19 100%),
+        linear-gradient(rgba(18, 24, 38, 0.7) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(18, 24, 38, 0.7) 1px, transparent 1px);
+      background-size: 100% 100%, 30px 30px, 30px 30px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+      transition: opacity 0.5s ease-out;
+    }
+
+    .intro-cabinet {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      max-width: 600px;
+      padding: 40px;
+      background: rgba(17, 24, 39, 0.85);
+      border: 4px solid var(--neon-magenta);
+      box-shadow: var(--glow-magenta), inset 0 0 20px rgba(255, 0, 127, 0.2);
+      border-radius: 20px;
+      position: relative;
+    }
+
+    .intro-title {
+      font-family: var(--font-arcade);
+      font-size: 2.2rem;
+      color: #fff;
+      text-shadow: var(--glow-magenta);
+      margin-bottom: 8px;
+      letter-spacing: -2px;
+      line-height: 1.2;
+    }
+
+    .intro-subtitle {
+      font-family: var(--font-retro);
+      font-size: 1.1rem;
+      color: var(--neon-cyan);
+      letter-spacing: 4px;
+      margin-bottom: 40px;
+      text-shadow: var(--glow-cyan);
+      text-transform: uppercase;
+    }
+
+    .coin-instructions {
+      font-family: var(--font-retro);
+      font-size: 0.95rem;
+      color: #9ca3af;
+      margin-bottom: 25px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    /* Gold Coin Styling */
+    .retro-coin {
+      width: 110px;
+      height: 110px;
+      background: radial-gradient(circle, #ffe066 0%, #f5b041 60%, #d35400 100%);
+      border: 5px solid #f39c12;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 15px #f39c12, 0 8px 16px rgba(0, 0, 0, 0.6);
+      font-family: var(--font-arcade);
+      font-size: 2.8rem;
+      color: #78281f;
+      text-shadow: 1px 1px 0px #fdedec;
+      
+      /* 3D Spin settings */
+      transform-style: preserve-3d;
+      animation: coin-spin 3s infinite linear;
+      transition: all 0.2s ease;
+    }
+
+    .retro-coin:hover {
+      transform: scale(1.1);
+      box-shadow: 0 0 35px #ffe066, 0 10px 25px rgba(0, 0, 0, 0.7);
+      animation-duration: 1.2s; /* Spins faster on hover! */
+    }
+
+    .retro-coin:active {
+      transform: scale(0.95);
+    }
+
+    @keyframes coin-spin {
+      0% { transform: rotateY(0deg); }
+      100% { transform: rotateY(360deg); }
+    }
+
+    @keyframes coin-spin-fast {
+      0% { transform: rotateY(0deg); }
+      100% { transform: rotateY(360deg); }
+    }
+
+    @keyframes coin-pulse {
+      0%, 100% { transform: scale(1); filter: brightness(1); }
+      50% { transform: scale(1.06); filter: brightness(1.15); }
+    }
+
+    /* Coin Slot Styling */
+    .coin-slot-container {
+      margin-top: 40px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .coin-slot-label {
+      font-family: var(--font-arcade);
+      font-size: 0.75rem;
+      color: #ef4444;
+      text-shadow: 0 0 6px #ef4444;
+      animation: blink 0.8s infinite;
+    }
+
+    .coin-slot {
+      width: 70px;
+      height: 130px;
+      background: #090d16;
+      border: 4px solid #374151;
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.9), inset 0 0 15px rgba(0, 0, 0, 0.95);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      transition: all 0.3s;
+    }
+
+    .coin-slot::before {
+      content: '';
+      position: absolute;
+      width: 14px;
+      height: 90px;
+      background: #000;
+      border-radius: 4px;
+      box-shadow: inset 0 0 5px rgba(255, 255, 255, 0.15);
+    }
+
+    /* Glowing green indicator when coin is inserted */
+    .coin-slot.active {
+      border-color: var(--neon-green);
+      box-shadow: var(--glow-green), inset 0 0 10px rgba(57, 255, 20, 0.2);
+    }
+
+    .coin-slot.active::before {
+      background: var(--neon-green);
+      box-shadow: var(--glow-green);
+    }
+
+    /* CRT transition effect */
+    .crt-power-on {
+      animation: crt-power-on 0.5s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+    }
+
+    @keyframes crt-power-on {
+      0% {
+        transform: scaleY(0.005) scaleX(0);
+        filter: brightness(3);
+        opacity: 0.5;
+      }
+      40% {
+        transform: scaleY(0.005) scaleX(1);
+        filter: brightness(3);
+        opacity: 0.8;
+      }
+      100% {
+        transform: scaleY(1) scaleX(1);
+        filter: brightness(1);
+        opacity: 1;
+      }
+    }
+
+    /* ----------------------------------
+       EASTER EGG SECRET MODAL
+    ---------------------------------- */
+    .easter-egg-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(11, 15, 25, 0.96);
+      z-index: 20000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    
+    .easter-egg-content {
+      background: #111827;
+      border: 4px solid var(--neon-yellow);
+      box-shadow: var(--glow-yellow);
+      border-radius: 20px;
+      padding: 35px;
+      max-width: 750px;
+      width: 100%;
+      text-align: center;
+      position: relative;
+    }
+    
+    .easter-egg-header {
+      font-family: var(--font-arcade);
+      font-size: 0.9rem;
+      color: var(--neon-yellow);
+      text-shadow: var(--glow-yellow);
+      margin-bottom: 20px;
+      animation: blink 0.8s infinite;
+    }
+    
+    .easter-egg-content h2 {
+      font-family: var(--font-arcade);
+      font-size: 1.3rem;
+      color: #fff;
+      text-shadow: var(--glow-magenta);
+      margin-bottom: 20px;
+      line-height: 1.4;
+    }
+    
+    .easter-egg-content p {
+      font-family: var(--font-body);
+      font-size: 1rem;
+      line-height: 1.6;
+      color: #d1d5db;
+      margin-bottom: 25px;
+    }
+    
+    .photo-border {
+      border: 4px solid var(--neon-cyan);
+      box-shadow: var(--glow-cyan);
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 30px;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .class-photo-img {
+      max-width: 100%;
+      max-height: 380px;
+      height: auto;
+      display: block;
+      border-radius: 6px;
+    }
+    
+    .easter-egg-close-btn {
+      font-family: var(--font-arcade);
+      font-size: 0.85rem;
+      background: transparent;
+      color: var(--neon-yellow);
+      border: 3px solid var(--neon-yellow);
+      padding: 15px 30px;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: var(--glow-yellow);
+      transition: all 0.2s;
+    }
+    
+    .easter-egg-close-btn:hover {
+      background: var(--neon-yellow);
+      color: #000;
+      box-shadow: 0 0 20px var(--neon-yellow);
+      transform: scale(1.05);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Easter Egg Secret Modal -->
+  <div id="secret-easter-egg" class="easter-egg-modal" style="display: none;">
+    <div class="easter-egg-content">
+      <div class="easter-egg-header">
+        <span>🚨 GEHEIM BERICHT ONTGRENDELD! 🚨</span>
+      </div>
+      <h2>👾 LEVEL 12: 12 GEWELDIGE LEERLINGEN! 👾</h2>
+      <p>Je hebt succesvol 12 credits verzameld, één voor elk van onze 12 geweldige leerlingen! Super bedankt aan alle jonge programmeurs voor deze fantastische week vol code, AI en héél veel plezier!</p>
+      
+      <div class="photo-border">
+        <img src="Klasfoto2026.jpg" alt="CodeFever AI Kamp 2026 Klasfoto" class="class-photo-img">
+      </div>
+      
+      <button class="easter-egg-close-btn" id="close-easter-egg-btn">TERUG NAAR DE ARCADE 🕹️</button>
+    </div>
+  </div>
+
+  <!-- Intro Screen -->
+  <div id="arcade-intro">
+    <div class="intro-cabinet">
+      <h2 class="intro-title">CODEFEVER ARCADE<span class="cursor-blink"></span></h2>
+      <span class="intro-subtitle">Allereerste AI Kamp #1</span>
+      
+      <span class="coin-instructions">Klik op de gouden munt om in te werpen:</span>
+      <div id="coin-wrapper" style="transition: all 0.8s cubic-bezier(0.5, -0.2, 0.5, 1.2); z-index: 10002;">
+        <div id="gold-coin" class="retro-coin">🪙</div>
+      </div>
+      
+      <div class="coin-slot-container">
+        <span class="coin-slot-label">INSERT COIN TO PLAY</span>
+        <div class="coin-slot"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Dashboard Wrapper -->
+  <div id="main-dashboard" style="display: none;">
+    <!-- Header -->
+    <header>
+    <div class="header-container">
+      <div class="logo-area">
+        <h1 class="logo-title">ARCADE SHOWCASE<span class="cursor-blink"></span></h1>
+        <span class="logo-subtitle">CodeFever AI Kamp #1 Showcase - Supervet &amp; Zelfgemaakt!</span>
+      </div>
+      
+      <div class="credits-system">
+        <div class="coin-display" id="coin-counter">🪙 CREDITS: 00</div>
+        <button class="coin-btn" id="insert-coin-btn">INSERT COIN</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Controls Panel (Search & Category filters) -->
+  <section class="controls-container">
+    <!-- CodeFever AI Kamp Banner -->
+    <div class="camp-intro-banner">
+      <h3>🚀 CODEFEVER AI KAMP #1 SHOWCASE</h3>
+      <p>Welkom in onze digitale arcadehal! Al deze games zijn gemaakt door de creatieve leerlingen van het allereerste <span class="highlight-magenta">CodeFever AI Kamp</span>. Het was een <span class="highlight-yellow">superleuke en creatieve week</span> waarin we hebben leren programmeren en onze eigen werelden hebben gebouwd met code. Werp een muntje in de machine, zoek een game en ontdek wat we gemaakt hebben!</p>
+    </div>
+    <div class="search-row">
+      <div class="search-wrapper">
+        <input type="text" id="search-bar" class="search-input" placeholder="ZOEK OP SPEELTITEIL OF LEERLING...">
+      </div>
+      
+      <!-- Hidden file input for directory scanning -->
+      <input type="file" id="folder-scanner" webkitdirectory directory multiple style="display: none;">
+      
+      <button class="btn-scan" id="scan-trigger-btn">
+        📂 SCAN GAMES DIRECTORY
+      </button>
+      <button class="btn-clear" id="clear-scanned-btn">
+        🧹 RESET PORTAAL
+      </button>
+    </div>
+
+    <div class="filters-row" style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 15px; align-items: center;">
+      <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+        <span class="filter-label">Filter op genre:</span>
+        <button class="filter-badge active" data-genre="all">🌐 ALLE GAMES</button>
+        <button class="filter-badge" data-genre="actie">🕹️ ACTIE</button>
+        <button class="filter-badge" data-genre="puzzel">🧩 PUZZEL</button>
+        <button class="filter-badge" data-genre="platform">🏃 PLATFORM</button>
+        <button class="filter-badge" data-genre="overig">💡 OVERIG</button>
+      </div>
+      
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span class="filter-label">Sorteer:</span>
+        <button class="filter-badge active" id="sort-default-btn">🕒 STANDAARD</button>
+        <button class="filter-badge" id="sort-popularity-btn">🔥 POPULAIR</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main Showcase Grid -->
+  <main class="main-content">
+    <div class="games-grid" id="games-grid">
+      <!-- Cards will be dynamically rendered here via JavaScript -->
+    </div>
+  </main>
+
+  <!-- Student Zone (Copy Code) -->
+  <section class="student-zone">
+    <div class="terminal-card">
+      <div class="terminal-header">
+        <div class="terminal-title">
+          <span>&gt;_ VOEG JOUW GAME TOE</span>
+        </div>
+        <div class="terminal-dots">
+          <span class="dot dot-r"></span>
+          <span class="dot dot-y"></span>
+          <span class="dot dot-g"></span>
+        </div>
+      </div>
+      
+      <div class="terminal-body" style="font-family: var(--font-body); color: #d1d5db; line-height: 1.6;">
+        <p style="margin-bottom: 20px; color: #a7f3d0;">
+          🚀 Dit arcade-portaal is ontworpen als een <strong>GitHub Pages website</strong>. Je kunt het eenvoudig zelf beheren, lokaal draaien en uitbreiden met nieuwe leerling-games!
+        </p>
+
+        <h4 style="font-family: var(--font-retro); color: var(--neon-cyan); margin: 25px 0 10px 0; text-transform: uppercase; letter-spacing: 1px;">💻 Hoe draai je dit portaal lokaal?</h4>
+        <ol style="margin-left: 20px; margin-bottom: 25px; padding-left: 0;">
+          <li style="margin-bottom: 8px;"><strong>Download de bestanden:</strong> Download de zip-map van GitHub of clone de repository naar je computer (of USB-stick).</li>
+          <li style="margin-bottom: 8px;"><strong>Open de pagina:</strong> Dubbelklik op <code>index.html</code> in de hoofdmap. Het portaal werkt 100% offline!</li>
+        </ol>
+
+        <h4 style="font-family: var(--font-retro); color: var(--neon-green); margin: 25px 0 10px 0; text-transform: uppercase; letter-spacing: 1px;">🎮 Games Toevoegen of Aanpassen</h4>
+        <p style="margin-bottom: 15px;">Er zijn twee manieren om spellen te beheren:</p>
+        <ul style="margin-left: 20px; margin-bottom: 25px; padding-left: 0; list-style-type: square;">
+          <li style="margin-bottom: 12px;">
+            <strong>Optie A: Tijdelijk inladen via de browser (Lokaal)</strong><br>
+            Klik bovenaan op <strong>📂 SCAN GAMES DIRECTORY</strong> en selecteer je map met spellen. Gebruik daarna het potlood-icoon (✏️) op een kaart om speltitels of leerlingnamen aan te passen. Dit slaat op in de browser (<code>localStorage</code>).
+          </li>
+          <li style="margin-bottom: 12px;">
+            <strong>Optie B: Permanent toevoegen via de code (GitHub)</strong><br>
+            1. Plaats het nieuwe HTML-bestand van de leerling in de hoofdmap.<br>
+            2. Open <code>index.html</code> in een code-editor (zoals VS Code of Notepad++).<br>
+            3. Zoek naar de lijst genaamd <code>const defaultGames</code> (rond regel 1565).<br>
+            4. Voeg een nieuw spel-object toe aan de lijst, bijvoorbeeld:<br>
+            <pre style="background: rgba(0,0,0,0.5); padding: 10px; border-radius: 4px; border: 1px solid rgba(0, 240, 255, 0.2); margin-top: 5px; color: var(--neon-cyan); font-family: monospace; font-size: 0.8rem;">
+{
+  author: "Naam Leerling",
+  title: "Titel Van Game",
+  category: "PLATFORM", // Kies uit: PLATFORM, PUZZEL, ACTIE of OVERIG
+  description: "Korte samenvatting van het vette avontuur!",
+  href: "naam_van_bestand.html"
+}</pre>
+            5. Sla het bestand op en push je wijzigingen naar GitHub om de website live te updaten!
+          </li>
+        </ul>
+
+        <h4 style="font-family: var(--font-retro); color: var(--neon-magenta); margin: 25px 0 10px 0; text-transform: uppercase; letter-spacing: 1px;">🏷️ Optioneel: Scanner Metadata in Game plaatsen</h4>
+        <p style="margin-bottom: 15px;">Als je optie A gebruikt en wilt dat de scanner de gegevens direct goed herkent zonder dat je ze handmatig hoeft te bewerken, kunnen leerlingen deze commentaarcode helemaal bovenaan hun eigen HTML-bestand plakken:</p>
+        
+        <div class="code-container">
+          <span class="code-lang">HTML commentaar</span>
+          <pre><code id="code-template">&lt;!-- 
+ARCADE_METADATA_START
+{
+  "author": "JOUW NAAM",
+  "title": "TITEL VAN JE GAME",
+  "category": "PLATFORM",
+  "description": "Schrijf hier een korte, spannende beschrijving van je spel..."
+}
+ARCADE_METADATA_END
+--&gt;</code></pre>
+        </div>
+        
+        <button class="btn-copy" id="copy-btn">
+          📄 KOPIEER TEMPLATE CODE
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Toast Toast Notification popup -->
+  <div class="toast" id="toast-notif">
+    <span id="toast-icon">✨</span> <span id="toast-message">Muntje ingeworpen!</span>
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    <p>🕹️ Retro Arcade Portaal &copy; 2026. Gemaakt voor de school-showcase.</p>
+    <p><a href="#">Terug naar boven 🔺</a></p>
+  </footer>
+
+  <!-- ----------------------------------
+       JAVASCRIPT APP LOGIC & AUDIO SYNTH
+  ---------------------------------- -->
+  <script>
+    // ----------------------------------
+    // WEB AUDIO API - RETRO SYNTH ENGINE
+    // ----------------------------------
+    // Audio Context gets initialized upon user interaction to satisfy browser policies
+    let audioCtx = null;
+
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+    }
+
+    function playSound(type) {
+      initAudio();
+      if (!audioCtx) return;
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+
+      const now = audioCtx.currentTime;
+
+      switch(type) {
+        case 'coin':
+          // Retro dual-tone arcade coin chime
+          // Note 1: 987.77 Hz (B5) for 80ms
+          // Note 2: 1318.51 Hz (E6) for 250ms
+          const osc1 = audioCtx.createOscillator();
+          const gain1 = audioCtx.createGain();
+          osc1.connect(gain1);
+          gain1.connect(audioCtx.destination);
+          
+          osc1.type = 'sine';
+          osc1.frequency.setValueAtTime(987.77, now);
+          osc1.frequency.setValueAtTime(1318.51, now + 0.08);
+          
+          gain1.gain.setValueAtTime(0.18, now);
+          gain1.gain.setValueAtTime(0.18, now + 0.08);
+          gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+          
+          osc1.start(now);
+          osc1.stop(now + 0.38);
+          break;
+
+        case 'hover':
+          // Soft short high frequency blip when hovering over menu/button items
+          const osc2 = audioCtx.createOscillator();
+          const gain2 = audioCtx.createGain();
+          osc2.connect(gain2);
+          gain2.connect(audioCtx.destination);
+          
+          osc2.type = 'triangle';
+          osc2.frequency.setValueAtTime(650, now);
+          osc2.frequency.exponentialRampToValueAtTime(900, now + 0.05);
+          
+          gain2.gain.setValueAtTime(0.04, now);
+          gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.055);
+          
+          osc2.start(now);
+          osc2.stop(now + 0.06);
+          break;
+
+        case 'click':
+          // Standard mechanical arcade button click sound
+          const osc3 = audioCtx.createOscillator();
+          const gain3 = audioCtx.createGain();
+          osc3.connect(gain3);
+          gain3.connect(audioCtx.destination);
+          
+          osc3.type = 'triangle';
+          osc3.frequency.setValueAtTime(120, now);
+          osc3.frequency.exponentialRampToValueAtTime(30, now + 0.08);
+          
+          gain3.gain.setValueAtTime(0.2, now);
+          gain3.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+          
+          osc3.start(now);
+          osc3.stop(now + 0.09);
+          break;
+
+        case 'start':
+          // Ascending chip-tune fanfare when launching a game
+          const notes = [261.63, 329.63, 392.00, 523.25, 659.25, 783.99, 1046.50]; // C4, E4, G4, C5, E5, G5, C6
+          notes.forEach((freq, idx) => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            const filter = audioCtx.createBiquadFilter();
+            
+            osc.connect(filter);
+            filter.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(freq, now + idx * 0.06);
+            
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(2000, now);
+
+            gain.gain.setValueAtTime(0.08, now + idx * 0.06);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.06 + 0.15);
+            
+            osc.start(now + idx * 0.06);
+            osc.stop(now + idx * 0.06 + 0.18);
+          });
+          break;
+
+        case 'copy':
+          // Uplifting high-pitched notification sound
+          const oscCopy = audioCtx.createOscillator();
+          const gainCopy = audioCtx.createGain();
+          oscCopy.connect(gainCopy);
+          gainCopy.connect(audioCtx.destination);
+          
+          oscCopy.type = 'sine';
+          oscCopy.frequency.setValueAtTime(587.33, now); // D5
+          oscCopy.frequency.setValueAtTime(880.00, now + 0.07); // A5
+          
+          gainCopy.gain.setValueAtTime(0.12, now);
+          gainCopy.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+          
+          oscCopy.start(now);
+          oscCopy.stop(now + 0.26);
+          break;
+
+        case 'victory':
+          // Long positive upbeat retro melody (fanfare)
+          const vicNotes = [523.25, 659.25, 783.99, 1046.50, 783.99, 1046.50, 1318.51];
+          vicNotes.forEach((freq, idx) => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            osc.type = idx % 2 === 0 ? 'square' : 'triangle';
+            osc.frequency.setValueAtTime(freq, now + idx * 0.12);
+            
+            gain.gain.setValueAtTime(0.12, now + idx * 0.12);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.12 + 0.25);
+            
+            osc.start(now + idx * 0.12);
+            osc.stop(now + idx * 0.12 + 0.28);
+          });
+          break;
+      }
+    }
+
+    // ----------------------------------
+    // CREDITS CONTROLLER
+    // ----------------------------------
+    let credits = 0;
+    const coinCounter = document.getElementById('coin-counter');
+    const insertCoinBtn = document.getElementById('insert-coin-btn');
+
+    function addCredit() {
+      credits++;
+      const formattedCredits = credits < 10 ? '0' + credits : credits;
+      coinCounter.innerText = `🪙 CREDITS: ${formattedCredits}`;
+      
+      // Flash the credits neon counter
+      coinCounter.style.borderColor = 'var(--neon-green)';
+      coinCounter.style.color = 'var(--neon-green)';
+      coinCounter.style.boxShadow = 'var(--glow-green)';
+      
+      setTimeout(() => {
+        coinCounter.style.borderColor = 'var(--neon-yellow)';
+        coinCounter.style.color = 'var(--neon-yellow)';
+        coinCounter.style.boxShadow = 'inset 0 0 5px rgba(255, 251, 0, 0.3)';
+      }, 300);
+
+      // Check for Easter Egg (Level 12)
+      if (credits === 12) {
+        setTimeout(() => {
+          triggerEasterEgg();
+        }, 600);
+      }
+    }
+
+    function triggerEasterEgg() {
+      const easterEgg = document.getElementById('secret-easter-egg');
+      if (easterEgg) {
+        playSound('victory');
+        easterEgg.style.display = 'flex';
+      }
+    }
+
+    // Hook up easter egg close button
+    document.getElementById('close-easter-egg-btn').addEventListener('click', () => {
+      playSound('click');
+      document.getElementById('secret-easter-egg').style.display = 'none';
+    });
+
+    insertCoinBtn.addEventListener('click', () => {
+      addCredit();
+      playSound('coin');
+      showNotification('🪙 MUNT GEACTIVEERD! PLAY START', 'success');
+    });
+
+    // ----------------------------------
+    // LOCAL STATIC DATA FALLBACKS
+    // ----------------------------------
+    const defaultGames = [
+      // HTML Games (Offline)
+      {
+        author: "Alix",
+        title: "Konijnen Sky Racer",
+        category: "PLATFORM",
+        description: "Een magisch vliegavontuur! Bestuur het konijntje met WASD of de pijltjes, ontwijk de houten palen en verzamel sappige wortels om de finish van 1000 meter te halen!",
+        href: "Alix-konijnen_sky_racer (1).html"
+      },
+      {
+        author: "Alix",
+        title: "Horse Runner",
+        category: "PLATFORM",
+        description: "Bestuur het paard en de ruiter in een eindeloos avontuur! Spring over hekken en ontwijk de monsters om een hoge score te behalen.",
+        href: "Alix-endless-runner-game/game.html"
+      },
+      {
+        author: "Charles",
+        title: "3D Waterpark Tycoon",
+        category: "OVERIG",
+        description: "Bouw glijbanen, upgrade je slagwapen en beheer bezoekers in deze interactieve 3D waterpark simulator.",
+        href: "waterpark_simulator.html"
+      },
+      {
+        author: "De Droeftoeters",
+        title: "De Piratenschat",
+        category: "PUZZEL",
+        description: "Een interactief piratenavontuur vol uitdagende codesloten, edelstenenpuzzels en mysterieuze schatkaarten. Los de raadsels op en breng de schat veilig naar de president!",
+        href: "de_piratenschat (1) - de droeftoeters.html"
+      },
+      {
+        author: "Leerlingen",
+        title: "Het Verlaten Huis 3D",
+        category: "ACTIE",
+        description: "Een bloedstollende 3D horror survival- & renovatiegame! Los codesloten op, vermijd de enge pop en herstel het vervallen landhuis.",
+        href: "het_verlaten_huis_3d_horror_co_op (1).html"
+      },
+      {
+        author: "Seppe & Charles",
+        title: "Zombie Escape: Trilogie",
+        category: "PUZZEL",
+        description: "Zombie Escape Level 1 t/m 3! Los de cijferpuzzel op, zoek sleutels en kraak de CCTV-plattegrond.",
+        href: "zombie_escape (1).html"
+      },
+      {
+        author: "Seppe, Charles & Shelly",
+        title: "Zombie Escape: Survival",
+        category: "PUZZEL",
+        description: "Zombie Escape Level 1 t/m 5! Met Brawl Stars avatars, dichttimmeren en de ontsnappingsraket.",
+        href: "zombie_escape (2).html"
+      },
+      // Lovable Web Games (Online)
+      {
+        author: "Lovable",
+        title: "Pony Palace Escape",
+        category: "OVERIG",
+        description: "Ontsnap uit het magische Pony Paleis in dit kleurrijke online avontuur.",
+        href: "https://pony-palace-escape.lovable.app"
+      },
+      {
+        author: "Lovable",
+        title: "Waarheden En Leugen",
+        category: "PUZZEL",
+        description: "Kun jij de leugens van de waarheid onderscheiden in deze quiz-game?",
+        href: "https://waarheden-en-leugen.lovable.app"
+      },
+      {
+        author: "Lovable",
+        title: "Weg Naar President",
+        category: "OVERIG",
+        description: "Baan je een weg naar het presidentschap in deze grappige online game.",
+        href: "https://wegnaarpresident.lovable.app"
+      },
+      {
+        author: "Lovable",
+        title: "Gallop Flame",
+        category: "PLATFORM",
+        description: "Ren en spring met een vurig paard in deze snelle vercel-arcade game.",
+        href: "https://gallop-flame.vercel.app"
+      },
+      {
+        author: "Lovable",
+        title: "Truth Two Lies Game",
+        category: "PUZZEL",
+        description: "Twee leugens, één waarheid! Vind het juiste antwoord en scoor punten.",
+        href: "https://truth-two-lies-game.lovable.app"
+      },
+      {
+        author: "Lovable",
+        title: "Hoofy Adventure Escape",
+        category: "OVERIG",
+        description: "Help het paardje te ontsnappen uit zijn stal in deze grappige point-and-click escape game.",
+        href: "https://hoofy-adventure-escape.lovable.app"
+      },
+      {
+        author: "Gemini",
+        title: "Gemini Chat-Helper",
+        category: "OVERIG",
+        description: "Bekijk de gedeelde AI-kamp chat met Google Gemini voor code-ontwikkeling.",
+        href: "https://share.gemini.google/UR6FPWge9ovp"
+      },
+      {
+        author: "Lovable",
+        title: "Princess Dash Dream",
+        category: "PLATFORM",
+        description: "Ren door een droomwereld en verzamel edelstenen met de prinses.",
+        href: "https://princess-dash-dream.lovable.app"
+      },
+      {
+        author: "Lovable",
+        title: "Slime Guard Knights",
+        category: "ACTIE",
+        description: "Bescherm het koninkrijk tegen slijm-monsters met je dappere ridders.",
+        href: "https://slime-guard-knights.lovable.app"
+      },
+      {
+        author: "Lovable",
+        title: "Liam Vs Luka Smash",
+        category: "ACTIE",
+        description: "De ultieme smash-battle tussen Liam en Luka! Wie zal er winnen?",
+        href: "https://liam-vs-luka-smash.lovable.app"
+      },
+      {
+        author: "Lovable",
+        title: "Fight For Your Live",
+        category: "ACTIE",
+        description: "Vecht om te overleven tegen golven vijanden in deze actie-survival game.",
+        href: "https://fightforyourlive.lovable.app"
+      },
+      {
+        author: "Lovable",
+        title: "Hyrule Reborn",
+        category: "OVERIG",
+        description: "Verken een opnieuw geboren Hyrule in deze op Zelda geïnspireerde game.",
+        href: "https://hyrule-reborn.lovable.app"
+      },
+      {
+        author: "Lovable",
+        title: "Minimalist Escape",
+        category: "PUZZEL",
+        description: "Ontsnap uit minimalistische, strak vormgegeven puzzelkamers.",
+        href: "https://minimalist-escape.lovable.app"
+      },
+      {
+        author: "Lovable",
+        title: "Professorship Escape Quest",
+        category: "PUZZEL",
+        description: "Los academische raadsels op en ontsnap uit de professorenkamer.",
+        href: "https://professorship-escape-quest.lovable.app"
+      }
+    ];
+
+    // ----------------------------------
+    // APPLICATION STATE & RENDER ENGINE
+    // ----------------------------------
+    let scannedGames = [];
+    let overrides = {};
+    let currentFilter = 'all';
+    let searchQuery = '';
+    let editingHref = null;
+    let sortBy = 'default';
+
+    // Load scanned games and overrides from localStorage
+    function loadSavedGames() {
+      const saved = localStorage.getItem('arcade_scanned_games');
+      if (saved) {
+        try {
+          scannedGames = JSON.parse(saved);
+        } catch (e) {
+          scannedGames = [];
+        }
+      }
+      
+      const savedOverrides = localStorage.getItem('arcade_overrides');
+      if (savedOverrides) {
+        try {
+          overrides = JSON.parse(savedOverrides);
+        } catch (e) {
+          overrides = {};
+        }
+      }
+      updateClearBtnVisibility();
+    }
+
+    // Save custom games to localStorage
+    function saveScannedGames(games) {
+      // Merge new scanned games with existing, preventing duplicate filenames
+      const merged = [...scannedGames];
+      games.forEach(g => {
+        const idx = merged.findIndex(mg => mg.href.toLowerCase() === g.href.toLowerCase());
+        if (idx !== -1) {
+          merged[idx] = g; // Overwrite
+        } else {
+          merged.push(g);
+        }
+      });
+      scannedGames = merged;
+      localStorage.setItem('arcade_scanned_games', JSON.stringify(scannedGames));
+      updateClearBtnVisibility();
+    }
+
+    function updateClearBtnVisibility() {
+      const clearBtn = document.getElementById('clear-scanned-btn');
+      if (scannedGames.length > 0 || Object.keys(overrides).length > 0) {
+        clearBtn.style.display = 'block';
+      } else {
+        clearBtn.style.display = 'none';
+      }
+    }
+
+    // Editing State Management
+    function startEditGame(href) {
+      playSound('click');
+      editingHref = href;
+      renderGames();
+    }
+
+    function cancelEditGame() {
+      playSound('click');
+      editingHref = null;
+      renderGames();
+    }
+
+    function saveEditGame(href) {
+      const titleInput = document.getElementById('edit-title');
+      const authorInput = document.getElementById('edit-author');
+      const descTextarea = document.getElementById('edit-desc');
+      const categorySelect = document.getElementById('edit-category');
+
+      if (!titleInput || !authorInput || !descTextarea || !categorySelect) return;
+
+      overrides[href] = {
+        title: titleInput.value.trim() || 'Naamloos Spel',
+        author: authorInput.value.trim() || 'Anoniem',
+        description: descTextarea.value.trim() || 'Een spannend zelfgemaakt spel.',
+        category: categorySelect.value
+      };
+
+      localStorage.setItem('arcade_overrides', JSON.stringify(overrides));
+      
+      playSound('copy');
+      editingHref = null;
+      updateClearBtnVisibility();
+      renderGames();
+      showNotification('💾 Spelgegevens succesvol opgeslagen!', 'success');
+    }
+
+    // Render the responsive game card grid
+    function renderGames() {
+      const grid = document.getElementById('games-grid');
+      grid.innerHTML = '';
+
+      const clicks = JSON.parse(localStorage.getItem('arcade_clicks') || '{}');
+
+      // Combine default games and scanned custom games, applying overrides
+      const allGames = [...defaultGames, ...scannedGames].map(game => {
+        if (overrides[game.href]) {
+          return { ...game, ...overrides[game.href] };
+        }
+        return game;
+      });
+
+      // Filter by genre
+      let filtered = allGames;
+      if (currentFilter !== 'all') {
+        filtered = allGames.filter(g => g.category.toLowerCase() === currentFilter);
+      }
+
+      // Filter by search query
+      if (searchQuery.trim() !== '') {
+        const q = searchQuery.toLowerCase();
+        filtered = filtered.filter(g => 
+          g.title.toLowerCase().includes(q) || 
+          g.author.toLowerCase().includes(q) ||
+          g.description.toLowerCase().includes(q)
+        );
+      }
+
+      // Sort by popularity if selected
+      if (sortBy === 'popularity') {
+        filtered.sort((a, b) => {
+          const clicksA = clicks[a.href] || 0;
+          const clicksB = clicks[b.href] || 0;
+          return clicksB - clicksA;
+        });
+      }
+
+      if (filtered.length === 0) {
+        grid.innerHTML = `
+          <div class="no-results">
+            <h3>GEEN SPELLEN GEVONDEN</h3>
+            <p>Geen resultaten voor deze zoekopdracht of filter. Probeer iets anders of scan meer games!</p>
+          </div>
+        `;
+        return;
+      }
+
+      filtered.forEach(game => {
+        const card = document.createElement('div');
+        card.className = 'game-card';
+        card.setAttribute('data-cat', game.category.toUpperCase());
+
+        // Render card content - check if in edit mode
+        if (game.href === editingHref) {
+          card.innerHTML = `
+            <div class="card-top">
+              <span class="author-name" style="color: var(--neon-cyan)">BEWERKEN...</span>
+            </div>
+            
+            <label style="font-family: var(--font-retro); font-size: 0.75rem; color: #9ca3af; margin-bottom: 4px;">Speltitel:</label>
+            <input type="text" id="edit-title" class="edit-input" value="${game.title}">
+            
+            <label style="font-family: var(--font-retro); font-size: 0.75rem; color: #9ca3af; margin-bottom: 4px;">Leerling / Speler:</label>
+            <input type="text" id="edit-author" class="edit-input" value="${game.author}">
+            
+            <label style="font-family: var(--font-retro); font-size: 0.75rem; color: #9ca3af; margin-bottom: 4px;">Genre / Categorie:</label>
+            <select id="edit-category" class="edit-input edit-select">
+              <option value="PLATFORM" ${game.category === 'PLATFORM' ? 'selected' : ''}>PLATFORM</option>
+              <option value="PUZZEL" ${game.category === 'PUZZEL' ? 'selected' : ''}>PUZZEL</option>
+              <option value="ACTIE" ${game.category === 'ACTIE' ? 'selected' : ''}>ACTIE</option>
+              <option value="OVERIG" ${game.category === 'OVERIG' ? 'selected' : ''}>OVERIG</option>
+            </select>
+            
+            <label style="font-family: var(--font-retro); font-size: 0.75rem; color: #9ca3af; margin-bottom: 4px;">Beschrijving:</label>
+            <textarea id="edit-desc" class="edit-input edit-textarea">${game.description}</textarea>
+            
+            <div class="edit-actions">
+              <button onclick="saveEditGame('${game.href}')" class="edit-btn edit-btn-save">OPSLAAN 💾</button>
+              <button onclick="cancelEditGame()" class="edit-btn edit-btn-cancel">ANNULEREN ❌</button>
+            </div>
+          `;
+        } else {
+          // Select correct visual tag class
+          let tagClass = 'badge-overig';
+          const cat = game.category.toLowerCase();
+          if (cat === 'actie') tagClass = 'badge-actie';
+          else if (cat === 'puzzel') tagClass = 'badge-puzzel';
+          else if (cat === 'platform') tagClass = 'badge-platform';
+
+          // Select an inline SVG visual based on category
+          let categorySVG = '';
+          if (cat === 'platform') {
+            categorySVG = `<svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="var(--neon-green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0 0 4px var(--neon-green))"><path d="M17 18a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2"></path><rect x="3" y="14" width="18" height="8" rx="2"></rect><path d="M12 2v12"></path><path d="m9 5 3-3 3 3"></path></svg>`;
+          } else if (cat === 'puzzel') {
+            categorySVG = `<svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="var(--neon-cyan)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0 0 4px var(--neon-cyan))"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>`;
+          } else if (cat === 'actie') {
+            categorySVG = `<svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="var(--neon-magenta)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0 0 4px var(--neon-magenta))"><rect x="6" y="3" width="12" height="18" rx="2"></rect><circle cx="12" cy="15" r="2"></circle><line x1="9" y1="9" x2="15" y2="9"></line><line x1="12" y1="6" x2="12" y2="12"></line></svg>`;
+          } else {
+            categorySVG = `<svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="var(--neon-yellow)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0 0 4px var(--neon-yellow))"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A5 5 0 0 0 8 8c0 1 .3 2.2 1 3.5.7.7 1.3 1.5 1.5 2.5"></path><path d="M9 18h6"></path><path d="M10 22h4"></path></svg>`;
+          }
+
+          const clickCount = clicks[game.href] || 0;
+
+          card.innerHTML = `
+            <div class="card-top">
+              <span class="author-name">
+                ${game.author}
+                <button class="card-edit-btn" title="Bewerk speltitel/auteur" onclick="event.preventDefault(); startEditGame('${game.href}')">✏️</button>
+              </span>
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <span class="plays-badge" style="font-family: var(--font-retro); font-size: 0.7rem; color: var(--neon-magenta); text-shadow: var(--glow-magenta); font-weight: bold;">🔥 ${clickCount} plays</span>
+                <span class="category-badge ${tagClass}">${game.category}</span>
+              </div>
+            </div>
+            <h2 class="game-title">${game.title}</h2>
+            <p class="game-desc">${game.description}</p>
+            <div class="game-url-display" style="font-family: var(--font-retro); font-size: 0.75rem; color: var(--neon-cyan); margin-bottom: 20px; word-break: break-all; opacity: 0.85;">
+              🔗 ${game.href}
+            </div>
+            <div class="pixel-art-container">
+              ${categorySVG}
+            </div>
+            <a href="${game.href}" target="_blank" class="play-btn">SPEEL NU ▶</a>
+          `;
+
+          // Sound cues for card button hovers and plays
+          const playBtn = card.querySelector('.play-btn');
+          playBtn.addEventListener('mouseenter', () => playSound('hover'));
+          playBtn.addEventListener('click', (e) => {
+            playSound('start');
+            registerClick(game.href);
+          });
+        }
+
+        grid.appendChild(card);
+      });
+    }
+
+    // ----------------------------------
+    // FOLDER DIRECTORY DISCOVERY / PARSING
+    // ----------------------------------
+    const scanTriggerBtn = document.getElementById('scan-trigger-btn');
+    const folderScannerInput = document.getElementById('folder-scanner');
+    const clearScannedBtn = document.getElementById('clear-scanned-btn');
+
+    // Trigger file dialog
+    scanTriggerBtn.addEventListener('click', () => {
+      playSound('click');
+      folderScannerInput.click();
+    });
+
+    // Reset portal (clear custom scans and overrides)
+    clearScannedBtn.addEventListener('click', () => {
+      playSound('click');
+      localStorage.removeItem('arcade_scanned_games');
+      localStorage.removeItem('arcade_overrides');
+      scannedGames = [];
+      overrides = {};
+      updateClearBtnVisibility();
+      renderGames();
+      showNotification('🧹 Arcade gereset naar fabrieksinstellingen.', 'success');
+    });
+
+    // Scanner file parsing
+    folderScannerInput.addEventListener('change', async (e) => {
+      const files = e.target.files;
+      if (!files || files.length === 0) return;
+
+      const detectedGames = [];
+      
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        
+        // Scan HTML files
+        if (file.name.endsWith('.html') || file.name.endsWith('.htm')) {
+          // Skip the portal itself if scanned
+          const lowerName = file.name.toLowerCase();
+          if (lowerName === 'index.html' || lowerName === 'index.htm') {
+            continue;
+          }
+
+          const fileContent = await readFileContent(file);
+          const meta = parseArcadeMetadata(fileContent, file.name);
+          if (meta) {
+            detectedGames.push(meta);
+          }
+        }
+        
+        // Scan TXT files for Lovable links
+        if (file.name.endsWith('.txt')) {
+          const fileContent = await readFileContent(file);
+          const links = parseLovableLinks(fileContent);
+          if (links.length > 0) {
+            detectedGames.push(...links);
+          }
+        }
+      }
+
+      if (detectedGames.length > 0) {
+        saveScannedGames(detectedGames);
+        renderGames();
+        showNotification(`🕹️ ${detectedGames.length} game(s) succesvol ingeladen!`, 'success');
+      } else {
+        showNotification(`❌ Geen HTML bestanden of Lovable links gevonden.`, 'error');
+      }
+      
+      // Clear file picker so it can be re-triggered
+      folderScannerInput.value = '';
+    });
+
+    // Helper: Read File API
+    function readFileContent(file) {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (event) => resolve(event.target.result);
+        reader.onerror = () => resolve('');
+        reader.readAsText(file);
+      });
+    }
+
+    // Helper: Parse Lovable Links from TXT file content
+    function parseLovableLinks(text) {
+      const lines = text.split(/\r?\n/);
+      const parsed = [];
+      lines.forEach(line => {
+        let url = line.trim();
+        if (!url) return;
+        
+        // Support locable.app typo
+        let cleanUrl = url.replace('locable.app', 'lovable.app');
+        
+        // Ensure https protocol
+        if (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://')) {
+          cleanUrl = 'https://' + cleanUrl;
+        }
+        
+        // Extract subdomain for title
+        try {
+          const parsedUrl = new URL(cleanUrl);
+          const hostParts = parsedUrl.hostname.split('.');
+          if (hostParts.length >= 3) {
+            let subdomain = hostParts[0];
+            let title = subdomain
+              .replace(/[_-]/g, ' ')
+              .split(' ')
+              .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+              .join(' ');
+              
+            parsed.push({
+              author: "Lovable Game",
+              title: title,
+              category: "OVERIG",
+              description: "Een interactieve web-game gebouwd met Lovable op " + parsedUrl.hostname + ".",
+              href: cleanUrl
+            });
+          }
+        } catch (e) {
+          console.warn("Invalid URL in links file:", url);
+        }
+      });
+      return parsed;
+    }
+
+    // Helper: Parse metadata from HTML (<title>, content, filenames) WITHOUT requiring comment tags
+    function parseArcadeMetadata(content, filename) {
+      // 1. Check if the file STILL happens to have the metadata comment block (as legacy fallback)
+      const startTag = 'ARCADE_METADATA_START';
+      const endTag = 'ARCADE_METADATA_END';
+      const startIndex = content.indexOf(startTag);
+      const endIndex = content.indexOf(endTag);
+
+      if (startIndex !== -1 && endIndex !== -1 && endIndex > startIndex) {
+        try {
+          const rawJson = content.substring(startIndex + startTag.length, endIndex).trim();
+          const parsed = JSON.parse(rawJson);
+          return {
+            author: parsed.author || 'Anoniem',
+            title: parsed.title || filename.replace('.html', ''),
+            category: (parsed.category || 'OVERIG').toUpperCase(),
+            description: parsed.description || 'Een spannend zelfgemaakt spel.',
+            href: filename
+          };
+        } catch (err) {
+          console.warn(`Error parsing metadata JSON in ${filename}:`, err);
+        }
+      }
+
+      // 2. Extract title from HTML <title> tag
+      let extractedTitle = '';
+      const titleMatch = content.match(/<title>([^<]+)<\/title>/i);
+      if (titleMatch && titleMatch[1]) {
+        extractedTitle = titleMatch[1].trim();
+      }
+
+      // Default values
+      let author = 'Leerling';
+      let title = filename.replace(/\(1\)|\.html|\.htm/gi, '').replace(/[_-]/g, ' ').trim();
+      let description = 'Een zelfgemaakt schoolproject spel.';
+
+      // Try to extract author and title from the <title> tag (e.g. "Konijnen Sky Racer - door Alix")
+      if (extractedTitle) {
+        const doorMatch = extractedTitle.match(/(.*?)\s+door\s+(.*)/i);
+        const byMatch = extractedTitle.match(/(.*?)\s+by\s+(.*)/i);
+        const dashMatch = extractedTitle.match(/(.*?)\s+-\s+(.*)/);
+
+        if (doorMatch && doorMatch[1] && doorMatch[2]) {
+          title = doorMatch[1].trim();
+          author = doorMatch[2].trim();
+        } else if (byMatch && byMatch[1] && byMatch[2]) {
+          title = byMatch[1].trim();
+          author = byMatch[2].trim();
+        } else if (dashMatch && dashMatch[1] && dashMatch[2]) {
+          const p1 = dashMatch[1].trim();
+          const p2 = dashMatch[2].trim();
+          // Heuristic: Check if one matches known names/groups
+          if (p1.toLowerCase().includes('droeftoeters') || p1.toLowerCase() === 'alix') {
+            author = p1;
+            title = p2;
+          } else {
+            title = p1;
+            author = p2;
+          }
+        } else {
+          title = extractedTitle;
+        }
+      } else {
+        // Fallback: Parse from filename
+        if (filename.includes(' - ')) {
+          const parts = filename.split(' - ');
+          const p1 = parts[0].replace(/\(1\)|\.html|\.htm/gi, '').replace(/[_-]/g, ' ').trim();
+          const p2 = parts[1].replace(/\(1\)|\.html|\.htm/gi, '').replace(/[_-]/g, ' ').trim();
+          if (p2.toLowerCase().includes('droeftoeters') || p2.toLowerCase() === 'alix') {
+            author = p2;
+            title = p1;
+          } else {
+            title = p1;
+            author = p2;
+          }
+        } else if (filename.includes('-')) {
+          const parts = filename.split('-');
+          const p1 = parts[0].replace(/\(1\)|\.html|\.htm/gi, '').replace(/[_-]/g, ' ').trim();
+          const p2 = parts[1].replace(/\(1\)|\.html|\.htm/gi, '').replace(/[_-]/g, ' ').trim();
+          if (p1.length < p2.length && p1.split(' ').length === 1) {
+            author = p1;
+            title = p2;
+          } else {
+            author = p2;
+            title = p1;
+          }
+        }
+      }
+
+      // Cleanup strings
+      title = title.replace(/\(1\)|\.html|\.htm/gi, '').replace(/[_-]/g, ' ').replace(/\s+/g, ' ').trim();
+      author = author.replace(/\(1\)|\.html|\.htm/gi, '').replace(/[_-]/g, ' ').replace(/\s+/g, ' ').trim();
+
+      // Capitalize first letters of each word
+      title = title.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+      author = author.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+
+      // Check if it's one of our built-in dummy game names (avoid duplication with fallback items)
+      if (title.toLowerCase().includes('konijnen sky racer') || title.toLowerCase().includes('piratenschat')) {
+        return null; // Let the default built-ins handle it
+      }
+
+      // 3. Auto-detect category from words in title/filename
+      let category = 'OVERIG';
+      const searchStr = (title + ' ' + filename).toLowerCase();
+      if (searchStr.includes('race') || searchStr.includes('racer') || searchStr.includes('run') || searchStr.includes('runner') || searchStr.includes('platform') || searchStr.includes('spring')) {
+        category = 'PLATFORM';
+      } else if (searchStr.includes('puzzel') || searchStr.includes('schat') || searchStr.includes('pirat') || searchStr.includes('code') || searchStr.includes('escape') || searchStr.includes('raadsel')) {
+        category = 'PUZZEL';
+      } else if (searchStr.includes('actie') || searchStr.includes('schiet') || searchStr.includes('fight') || searchStr.includes('battle') || searchStr.includes('laser')) {
+        category = 'ACTIE';
+      }
+
+      // 4. Try to read a description block if present in HTML, e.g. <p class="desc"> or first few paragraphs
+      // Otherwise use a default template
+      const descMatch = content.match(/<p\s+class="desc">([^<]+)<\/p>/i) || content.match(/<p[^>]*>([^<]+)<\/p>/i);
+      if (descMatch && descMatch[1] && descMatch[1].trim().length > 10 && descMatch[1].trim().length < 200) {
+        description = descMatch[1].trim();
+      }
+
+      return {
+        author: author || 'Leerling',
+        title: title || 'Nieuw Spel',
+        category: category,
+        description: description,
+        href: filename
+      };
+    }
+
+    // ----------------------------------
+    // DYNAMIC FILTERING & SEARCH SEARCH
+    // ----------------------------------
+    const searchBar = document.getElementById('search-bar');
+    const filterButtons = document.querySelectorAll('.filter-badge');
+
+    // Live search input
+    searchBar.addEventListener('input', (e) => {
+      searchQuery = e.target.value;
+      renderGames();
+    });
+
+    // Genre buttons click
+    filterButtons.forEach(btn => {
+      btn.addEventListener('mouseenter', () => playSound('hover'));
+      btn.addEventListener('click', (e) => {
+        playSound('click');
+        
+        // Remove active class from all
+        filterButtons.forEach(b => b.classList.remove('active'));
+        
+        // Set active
+        btn.classList.add('active');
+        currentFilter = btn.getAttribute('data-genre');
+        
+        renderGames();
+      });
+    });
+
+    // ----------------------------------
+    // STUDENT ZONE - COPY BUTTON LOGIC
+    // ----------------------------------
+    const copyBtn = document.getElementById('copy-btn');
+    const codeTemplate = document.getElementById('code-template');
+
+    copyBtn.addEventListener('click', () => {
+      const textToCopy = codeTemplate.innerText;
+      
+      navigator.clipboard.writeText(textToCopy).then(() => {
+        playSound('copy');
+        copyBtn.innerText = '✅ CODE GEKOPIEERD!';
+        copyBtn.style.borderColor = 'var(--neon-cyan)';
+        copyBtn.style.color = 'var(--neon-cyan)';
+        copyBtn.style.boxShadow = 'var(--glow-cyan)';
+        
+        showNotification('📋 HTML code gekopieerd naar klembord!', 'success');
+        
+        setTimeout(() => {
+          copyBtn.innerText = '📄 KOPIEER TEMPLATE CODE';
+          copyBtn.style.borderColor = 'var(--neon-green)';
+          copyBtn.style.color = 'var(--neon-green)';
+          copyBtn.style.boxShadow = 'var(--glow-green)';
+        }, 2000);
+      }).catch(err => {
+        console.error('Failed to copy: ', err);
+        showNotification('❌ Kopieren mislukt. Kopieer handmatig.', 'error');
+      });
+    });
+
+    // ----------------------------------
+    // NOTIFICATION ENGINE
+    // ----------------------------------
+    function showNotification(message, type = 'success') {
+      const toast = document.getElementById('toast-notif');
+      const icon = document.getElementById('toast-icon');
+      const msg = document.getElementById('toast-message');
+
+      msg.innerText = message;
+      if (type === 'error') {
+        icon.innerText = '⚠️';
+        toast.classList.add('error-toast');
+      } else {
+        icon.innerText = '✨';
+        toast.classList.remove('error-toast');
+      }
+
+      toast.classList.add('show');
+
+      // Auto hide
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 3000);
+    }
+
+    // Fetch Lovable links text file on startup if served via HTTP/HTTPS
+    async function tryFetchLovableLinks() {
+      try {
+        const response = await fetch('Lovable-Games-verzameling .txt');
+        if (response.ok) {
+          const text = await response.text();
+          const games = parseLovableLinks(text);
+          if (games.length > 0) {
+            saveScannedGames(games);
+            renderGames();
+            console.log("Lovable links successfully loaded on startup:", games.length);
+          }
+        }
+      } catch (e) {
+        // Silent catch for local file:// CORS restrictions or missing file
+        console.log("Auto-fetch Lovable links bypassed (standard on local file:// URLs):", e);
+      }
+    }
+
+    // Register clicks for popularity tracking
+    function registerClick(href) {
+      let clicks = JSON.parse(localStorage.getItem('arcade_clicks') || '{}');
+      clicks[href] = (clicks[href] || 0) + 1;
+      localStorage.setItem('arcade_clicks', JSON.stringify(clicks));
+      renderGames();
+    }
+
+    // Initialize Page
+    loadSavedGames();
+    renderGames();
+    tryFetchLovableLinks();
+
+    // Hook up sorting buttons
+    const sortDefaultBtn = document.getElementById('sort-default-btn');
+    const sortPopularityBtn = document.getElementById('sort-popularity-btn');
+
+    sortDefaultBtn.addEventListener('mouseenter', () => playSound('hover'));
+    sortDefaultBtn.addEventListener('click', () => {
+      playSound('click');
+      sortDefaultBtn.classList.add('active');
+      sortPopularityBtn.classList.remove('active');
+      sortBy = 'default';
+      renderGames();
+    });
+
+    sortPopularityBtn.addEventListener('mouseenter', () => playSound('hover'));
+    sortPopularityBtn.addEventListener('click', () => {
+      playSound('click');
+      sortPopularityBtn.classList.add('active');
+      sortDefaultBtn.classList.remove('active');
+      sortBy = 'popularity';
+      renderGames();
+    });
+
+    // Attach basic hover sounds to scanning buttons
+    scanTriggerBtn.addEventListener('mouseenter', () => playSound('hover'));
+    clearScannedBtn.addEventListener('mouseenter', () => playSound('hover'));
+    insertCoinBtn.addEventListener('mouseenter', () => playSound('hover'));
+
+    // ----------------------------------
+    // INTRO SCREEN & GOLD COIN TRANSITION
+    // ----------------------------------
+    const goldCoin = document.getElementById('gold-coin');
+    const coinWrapper = document.getElementById('coin-wrapper');
+    const arcadeIntro = document.getElementById('arcade-intro');
+    const mainDashboard = document.getElementById('main-dashboard');
+    const coinSlot = document.querySelector('.coin-slot');
+
+    goldCoin.addEventListener('mouseenter', () => playSound('hover'));
+    goldCoin.addEventListener('click', () => {
+      // Prevent multiple clicks
+      goldCoin.style.pointerEvents = 'none';
+      
+      // Calculate alignment vector to center of slot using the wrapper
+      const coinRect = coinWrapper.getBoundingClientRect();
+      const slotRect = coinSlot.getBoundingClientRect();
+      
+      const deltaX = (slotRect.left + slotRect.width/2) - (coinRect.left + coinRect.width/2);
+      const deltaY = (slotRect.top + slotRect.height/2) - (coinRect.top + coinRect.height/2);
+      
+      // Trigger sound: coin insert chime
+      playSound('coin');
+      
+      // Make the inner coin spin super fast
+      goldCoin.style.animation = 'coin-spin-fast 0.3s infinite linear';
+      
+      // Move and scale the wrapper down into the slot
+      coinWrapper.style.transform = `translate(${deltaX}px, ${deltaY}px) scale(0.1)`;
+      coinWrapper.style.opacity = '0';
+      
+      // After coin slides in:
+      setTimeout(() => {
+        // Activate slot glow
+        coinSlot.classList.add('active');
+        playSound('click');
+        
+        // Hide intro, show dashboard with CRT power-on animation
+        setTimeout(() => {
+          arcadeIntro.style.opacity = '0';
+          
+          setTimeout(() => {
+            arcadeIntro.style.display = 'none';
+            mainDashboard.style.display = 'block';
+            mainDashboard.classList.add('crt-power-on');
+            
+            // Set first credit & play start fanfare
+            credits = 0;
+            addCredit();
+            playSound('start');
+            showNotification('🕹️ ARCADE GEACTIVEERD - CREDITS: 01', 'success');
+          }, 300);
+        }, 400);
+      }, 800);
+    });
+
+  </script>
+  </div> <!-- End Main Dashboard Wrapper -->
+</body>
+</html>
